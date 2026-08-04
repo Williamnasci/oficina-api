@@ -1,4 +1,19 @@
-# Oficina Tech Challenge
+# oficina-api
+
+> Repositório renomeado na Fase 3 (era `oficina-tech-challenge`) para refletir seu papel dentro do split de 4 repositórios exigido pelo desafio — ver [ADR-0005](docs/adr/0005-split-de-repositorios.md).
+
+## Repositórios do Tech Challenge Fase 3
+
+Este é o repositório da **aplicação principal**. Os demais componentes da Fase 3 vivem em repositórios separados, cada um com seu próprio CI/CD e branch `main` protegida:
+
+| Repositório | Papel |
+|---|---|
+| [`oficina-api`](https://github.com/Williamnasci/oficina-api) (este) | Aplicação principal (NestJS), executando em Kubernetes |
+| [`oficina-lambda-auth`](https://github.com/Williamnasci/oficina-lambda-auth) | Function Serverless de autenticação por CPF |
+| [`oficina-infra-k8s`](https://github.com/Williamnasci/oficina-infra-k8s) | Terraform: cluster Kubernetes (Kind em EC2) e API Gateway |
+| [`oficina-infra-database`](https://github.com/Williamnasci/oficina-infra-database) | Terraform: banco de dados gerenciado (RDS PostgreSQL) |
+
+Decisões arquiteturais completas (RFCs, ADRs, diagramas) ficam em [`docs/`](docs/) neste repositório: [plano da Fase 3](docs/phase-3-plan.md), [diagrama de componentes](docs/architecture-components.md), [diagramas de sequência](docs/sequence-diagrams.md), [diagrama ER](docs/database-er.md).
 
 ## Descrição do Projeto
 
