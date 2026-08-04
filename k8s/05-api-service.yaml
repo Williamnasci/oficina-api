@@ -4,10 +4,15 @@ metadata:
   name: oficina-api
   namespace: oficina
 spec:
-  type: LoadBalancer
+  # NodePort, nao LoadBalancer: Kind nao tem um cloud provider para provisionar
+  # um balanceador. 30080 precisa bater com o extraPortMappings do Kind e com
+  # var.app_node_port no Terraform de oficina-infra-k8s (mesmo IP:porta que o
+  # API Gateway vai usar como alvo de integracao - ver ADR-0004 no oficina-api).
+  type: NodePort
   selector:
     app: oficina-api
   ports:
     - name: http
       port: 80
       targetPort: http
+      nodePort: 30080
