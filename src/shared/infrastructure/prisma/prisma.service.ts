@@ -11,16 +11,17 @@ export class PrismaService extends PrismaClient implements OnModuleInit {
             throw new Error('DATABASE_URL is not defined.');
         }
 
-        // @prisma/adapter-pg roda sobre node-postgres, que nao interpreta
-        // "sslmode=require" da connection string (isso e uma convencao do
-        // libpq, usada pelo engine nativo do Prisma, nao pelo driver pg). Sem
-        // isso explicito, a conexao contra um RDS com rds.force_ssl=1 e
-        // recusada. Condicional porque o Postgres local de dev/CI nao tem SSL
-        // configurado. rejectUnauthorized: false porque o RDS usa a CA
-        // propria da AWS, nao uma CA publica bundleada por padrao.
+        // node-postgres (usado pelo @prisma/adapter-pg) trata "sslmode=require"
+        // na connection string como alias de "verify-full", validando o
+        // certificado do servidor contra as CAs conhecidas do Node - o que
+        // falha contra o RDS, que usa a CA propria da AWS, nao uma CA publica.
+        // Solucao: tirar sslmode da URL e configurar SSL explicitamente via
+        // objeto (rejectUnauthorized: false = criptografado, sem validar CA).
+        // Condicional porque o Postgres local de dev/CI nao usa SSL.
         const requiresSsl = /\bsslmode=require\b/.test(connectionString);
+        const cleanConnectionString = connectionString.replace(/[?&]sslmode=require\b/, '');
         const adapter = new PrismaPg({
-            connectionString,
+            connectionString: cleanConnectionString,
             ...(requiresSsl ? { ssl: { rejectUnauthorized: false } } : {}),
         });
 
