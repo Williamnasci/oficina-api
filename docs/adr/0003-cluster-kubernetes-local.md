@@ -39,6 +39,12 @@ A primeira versão desta ADR assumia Kind rodando localmente no notebook, mas is
 
 A EC2 `t3.micro` é suficiente aqui porque o Kind (Kubernetes-in-Docker, cluster single-node em containers) é muito mais leve que um cluster `kubeadm` completo — diferente da alternativa C original (descartada por instabilidade), aqui não estamos rodando `kubeadm` multi-componente do zero, só os containers do Kind + os pods da aplicação.
 
+### Segunda correção: `t3.micro` também se mostrou insuficiente na prática
+
+A suposição acima não se sustentou sob teste real. Rodando o control-plane do Kind sozinho, `t3.micro` (1 vCPU, 1GB) ficava instável após múltiplas recriações (créditos de CPU esgotados). Pior: mesmo com créditos recuperados via reboot, ao aplicar o Deployment real da aplicação (2 réplicas + init container de migration) a instância voltou a ficar não-responsiva (timeout de TLS, comandos SSM presos) — ou seja, o problema não era só CPU credit, era também memória insuficiente para Kind + aplicação rodando ao mesmo tempo.
+
+**Decisão final:** `t3.small` (2 vCPU, 2GB), fora do Free Tier (custo baixo, ~US$0,02/hora). Mantém tudo mais desta ADR (Kind não-gerenciado, EC2 com IP público, sem EKS) — muda só o tamanho da instância.
+
 ## Consequências
 
 ### Positivas
