@@ -12,6 +12,7 @@ describe('AuthController', () => {
         };
         configService = {
             get: jest.fn((_key: string, defaultValue: string) => defaultValue),
+            getOrThrow: jest.fn((_key: string) => 'admin'),
         };
         controller = new AuthController(jwtService, configService);
     });
