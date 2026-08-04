@@ -51,8 +51,8 @@ O repositório atual (`oficina-tech-challenge`) vira a base do `oficina-api`; os
 | Function serverless de auth por CPF (valida CPF, consulta cliente, gera JWT) | `oficina-lambda-auth`, reaproveitando a lógica de `find-customer-by-document`; JWT gerado via lib própria (`jsonwebtoken`), não via Cognito — ver `docs/adr/0005-lambda-auth-custom-vs-cognito.md` | Não |
 | Proteção de rotas sensíveis via CPF | `oficina-api` (guard valida o JWT emitido pela Lambda) + API Gateway (JWT authorizer na rota protegida) | Parcial — já existe `jwt-auth.guard.ts`, mas validando o JWT admin, não o de CPF |
 | 4 repositórios com CI/CD e branch protegida | Todos | Não |
-| Banco de dados gerenciado | `oficina-infra-database` — RDS PostgreSQL (Free Tier: `db.t3.micro`, 20GB) | **Sim** — aplicado na conta real (`oficina-db.c1is204ug5ek.us-east-2.rds.amazonaws.com`); falta migrar o schema Prisma da aplicação para lá |
-| Cluster Kubernetes com escalabilidade | EC2 `t3.micro` + Kind (decisão final — ver `docs/adr/0003-cluster-kubernetes-local.md`), HPA já existe na Fase 2 | **Sim** — cluster real no ar, `kubectl` externo validado; falta aplicar os manifests da aplicação nele e validar o HPA sob carga |
+| Banco de dados gerenciado | `oficina-infra-database` — RDS PostgreSQL (Free Tier: `db.t3.micro`, 20GB) | **Sim** — aplicado, schema Prisma migrado, aplicação principal conectada e respondendo `database: ok` em produção |
+| Cluster Kubernetes com escalabilidade | EC2 `t3.small` + Kind (decisão final, atualizada após `t3.micro` se mostrar insuficiente sob carga — ver `docs/adr/0003-cluster-kubernetes-local.md`), HPA já existe na Fase 2 | **Sim** — cluster real no ar, aplicação implantada e respondendo via NodePort; falta validar o HPA sob carga real |
 | Terraform para tudo | `oficina-infra-k8s`, `oficina-infra-database` | Parcial — já existe Terraform da Fase 2, precisa ser dividido e apontar para AWS |
 | Datadog (latência, CPU/memória, healthcheck, alertas, logs JSON correlacionados) | `oficina-api` + infra | Não |
 | Dashboards (volume diário de OS, tempo médio por status, erros) | Datadog | Não |
