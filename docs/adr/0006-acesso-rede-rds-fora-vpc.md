@@ -31,3 +31,9 @@ Alternativa C, com uma exceção explícita e documentada: o security group do R
 ### Negativas / trade-offs aceitos
 - O endpoint do RDS é alcançável pela internet; a segurança depende inteiramente de credencial forte + TLS, não de isolamento de rede. Para uma carga de trabalho real de produção (fora do escopo acadêmico deste desafio), a recomendação correta seria a Alternativa A ou B.
 - Se o IP de saída da Lambda for descoberto e a senha vazar, não há uma segunda barreira de rede. Mitigação parcial: rotação do segredo no Secrets Manager é simples (basta `terraform apply` com um novo `random_password`), caso necessário.
+
+## Atualização (aplicação real)
+
+A regra final em `oficina-infra-database/main.tf` (`postgres_open_for_lambda_auth`) libera `0.0.0.0/0` na porta 5432 — não um CIDR específico da Lambda, porque esse CIDR nunca existiu (o próprio texto acima já explicava por quê). O nome do recurso e a descrição no Terraform foram ajustados para dizer isso explicitamente ("ABERTO GLOBALMENTE"), evitando a impressão de que é uma regra restrita.
+
+TLS deixou de ser só criptografia: `oficina-api` e `oficina-lambda-auth` agora validam a identidade do servidor de verdade, usando o bundle oficial de CA da AWS (`rds-ca-bundle.ts`, baixado de `https://truststore.pki.rds.amazonaws.com/global/global-bundle.pem`) com `rejectUnauthorized: true`, em vez de `rejectUnauthorized: false`. Isso fecha a lacuna de um ataque man-in-the-middle na rede pública entre a Lambda e o RDS — a mitigação "TLS obrigatório" citada acima agora é literal, não só nominal.

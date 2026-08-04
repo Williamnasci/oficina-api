@@ -25,7 +25,7 @@ graph TB
         CW["CloudWatch Logs<br/>(logs da Lambda)"]
     end
 
-    subgraph K8S["EC2 t3.micro — Cluster Kind (ADR-0003)"]
+    subgraph K8S["EC2 t3.small — Cluster Kind (ADR-0003)"]
         subgraph Deploy["Deployment oficina-api (HPA — ADR-0002)"]
             P1[Pod NestJS]
             P2[Pod NestJS]
@@ -76,4 +76,4 @@ graph TB
 
 - A Lambda de autenticação acessa o mesmo RDS que a aplicação principal, reaproveitando a tabela `Customer` — não há duplicação de dados de cliente entre os dois serviços.
 - O Lambda Authorizer não chama a Lambda de autenticação: ele só verifica a assinatura do token já emitido, usando o mesmo segredo do Secrets Manager. São duas funções com responsabilidades diferentes, ainda que no mesmo repositório.
-- O cluster Kubernetes é Kind (não gerenciado, sem custo de control plane), mas hospedado numa EC2 `t3.micro` com IP público — por isso aparece como uma caixa separada da "AWS" gerenciada no diagrama, mesmo estando fisicamente na AWS. Essa escolha existe para que o API Gateway tenha um alvo de integração de fato alcançável pela rede (ver correção registrada em [ADR-0003](adr/0003-cluster-kubernetes-local.md)) — um cluster só no notebook do desenvolvedor não seria roteável pelo Gateway.
+- O cluster Kubernetes é Kind (não gerenciado, sem custo de control plane), mas hospedado numa EC2 `t3.small` com IP público — por isso aparece como uma caixa separada da "AWS" gerenciada no diagrama, mesmo estando fisicamente na AWS. Essa escolha existe para que o API Gateway tenha um alvo de integração de fato alcançável pela rede (ver correção registrada em [ADR-0003](adr/0003-cluster-kubernetes-local.md)) — um cluster só no notebook do desenvolvedor não seria roteável pelo Gateway.
