@@ -224,6 +224,9 @@ jobs:
           # sempre um rollout restart para os pods relerem o secret atual.
           Write-Host "Forcando rollout restart para os pods relerem o secret atual..."
           kubectl rollout restart deployment/oficina-api -n oficina
+          if ($LASTEXITCODE -ne 0) {
+              exit $LASTEXITCODE
+          }
 
           Write-Host "Aguardando o rollout da API Oficina..."
           kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
