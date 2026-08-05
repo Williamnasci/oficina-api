@@ -218,6 +218,13 @@ jobs:
               exit $LASTEXITCODE
           }
 
+          # kubectl set image so reinicia os pods se a imagem mudar. Como o
+          # secret oficina-secrets pode ter sido rotacionado sem mudanca de
+          # imagem (ex: rerun de workflow, rotacao manual de senha), forcamos
+          # sempre um rollout restart para os pods relerem o secret atual.
+          Write-Host "Forcando rollout restart para os pods relerem o secret atual..."
+          kubectl rollout restart deployment/oficina-api -n oficina
+
           Write-Host "Aguardando o rollout da API Oficina..."
           kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
 
@@ -264,6 +271,13 @@ jobs:
 
           echo "Atualizando imagem do Deployment para ${image}..."
           kubectl set image deployment/oficina-api "oficina-api=${image}" "prisma-migrate=${image}" -n oficina
+
+          # kubectl set image so reinicia os pods se a imagem mudar. Como o
+          # secret oficina-secrets pode ter sido rotacionado sem mudanca de
+          # imagem (ex: rerun de workflow, rotacao manual de senha), forcamos
+          # sempre um rollout restart para os pods relerem o secret atual.
+          echo "Forcando rollout restart para os pods relerem o secret atual..."
+          kubectl rollout restart deployment/oficina-api -n oficina
 
           echo "Aguardando o rollout da API Oficina..."
           kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
