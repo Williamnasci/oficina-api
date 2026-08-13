@@ -13,7 +13,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: number; role: string }) {
-    return { userId: payload.sub, role: payload.role };
+  // JWT_SECRET agora e compartilhado com oficina-lambda-auth (ver README):
+  // o payload pode vir do login admin/admin deste servico ({sub: number, role})
+  // ou do login por CPF emitido pela Lambda ({sub: string (uuid), document}).
+  async validate(payload: { sub: number | string; role?: string; document?: string }) {
+    return { userId: payload.sub, role: payload.role, document: payload.document };
   }
 }
