@@ -84,6 +84,7 @@ O repositório atual (`oficina-tech-challenge`) vira a base do `oficina-api`; os
 - Limites do Free Tier pessoal (RDS `db.t3.micro` 750h/mês, Lambda 1M invocações/mês, API Gateway 1M chamadas/mês nos primeiros 12 meses) são folgados para o escopo do desafio, mas é preciso lembrar de destruir recursos (`terraform destroy`) fora das janelas de uso/demo para não estourar 750h/mês se houver múltiplos recursos EC2/RDS simultâneos.
 - Região deve ficar consistente (`us-east-2`) em todos os módulos Terraform para evitar custo de tráfego entre regiões e simplificar troubleshooting.
 - Nenhum trabalho de Fase 3 foi iniciado no repositório atual; este plano parte do zero sobre a base sólida deixada pela Fase 2.
+- **Resolvido (2026-08-03):** dúvida sobre o requisito do PDF "deploy automático das branches de homologação e produção". O Prof. Douglas Martins confirmou no fórum da disciplina que, com conta de estudante/laboratório AWS, é esperado apenas **1 ambiente** — o item "homologação" do PDF pode ser desconsiderado. `main` protegida + PR obrigatório + deploy automático em `main` (já implementado nos 4 repositórios) satisfaz o requisito.
 
 ### Riscos residuais aceitos (não corrigidos por decisão consciente)
 
