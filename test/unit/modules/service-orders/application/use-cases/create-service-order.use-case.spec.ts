@@ -7,12 +7,14 @@ describe('CreateServiceOrderUseCase', () => {
     let serviceOrderRepo: any;
     let customerRepo: any;
     let vehicleRepo: any;
+    let metricsService: any;
 
     beforeEach(() => {
         serviceOrderRepo = { create: jest.fn() };
         customerRepo = { findById: jest.fn(), findByDocument: jest.fn() };
         vehicleRepo = { findById: jest.fn() };
-        useCase = new CreateServiceOrderUseCase(serviceOrderRepo, customerRepo, vehicleRepo);
+        metricsService = { recordServiceOrderCreated: jest.fn() };
+        useCase = new CreateServiceOrderUseCase(serviceOrderRepo, customerRepo, vehicleRepo, metricsService);
     });
 
     it('should create a service order with active customer and vehicle', async () => {

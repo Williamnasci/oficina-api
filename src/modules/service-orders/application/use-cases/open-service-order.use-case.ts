@@ -10,6 +10,7 @@ import { DomainException } from '../../../../shared/domain/errors/domain.excepti
 import { ServiceOrder } from '../../domain/entities/service-order.entity';
 import { ServiceOrderRepository } from '../../domain/repositories/service-order.repository';
 import { OpenServiceOrderDto } from '../dto/open-service-order.dto';
+import { MetricsService } from '../../../../observability/metrics.service';
 
 @Injectable()
 export class OpenServiceOrderUseCase {
@@ -20,6 +21,7 @@ export class OpenServiceOrderUseCase {
         private readonly customerRepository: CustomerRepository,
         @Inject(VehicleRepository)
         private readonly vehicleRepository: VehicleRepository,
+        private readonly metricsService: MetricsService,
     ) { }
 
     async execute(input: OpenServiceOrderDto): Promise<{ id: string }> {
@@ -37,6 +39,7 @@ export class OpenServiceOrderUseCase {
         });
 
         await this.serviceOrderRepository.create(serviceOrder);
+        this.metricsService.recordServiceOrderCreated();
 
         for (const service of input.services) {
             await this.serviceOrderRepository.addServiceToOrder(

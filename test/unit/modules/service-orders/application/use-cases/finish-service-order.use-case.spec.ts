@@ -15,6 +15,7 @@ describe('FinishServiceOrderUseCase', () => {
                 this.status = ServiceOrderStatus.FINISHED;
             }),
             status: ServiceOrderStatus.IN_PROGRESS,
+            createdAt: new Date('2026-07-03T10:00:00.000Z'),
         };
         repository = {
             findById: jest.fn().mockResolvedValue(mockServiceOrder),

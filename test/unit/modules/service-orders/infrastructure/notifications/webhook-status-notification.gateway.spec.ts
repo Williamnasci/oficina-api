@@ -7,6 +7,7 @@ describe('WebhookStatusNotificationGateway', () => {
     serviceOrderId: 'order-1',
     status: ServiceOrderStatus.FINISHED,
     occurredAt: '2026-07-03T12:00:00.000Z',
+    createdAt: '2026-07-03T10:00:00.000Z',
   };
 
   afterEach(() => {
@@ -18,7 +19,8 @@ describe('WebhookStatusNotificationGateway', () => {
     const configService = {
       get: jest.fn().mockReturnValue(undefined),
     } as unknown as ConfigService;
-    const gateway = new WebhookStatusNotificationGateway(configService);
+    const metricsService = { recordIntegrationError: jest.fn() } as any;
+    const gateway = new WebhookStatusNotificationGateway(configService, metricsService);
 
     await gateway.notifyStatusChanged(event);
 
@@ -33,7 +35,8 @@ describe('WebhookStatusNotificationGateway', () => {
     const configService = {
       get: jest.fn().mockReturnValue('https://example.test/status'),
     } as unknown as ConfigService;
-    const gateway = new WebhookStatusNotificationGateway(configService);
+    const metricsService = { recordIntegrationError: jest.fn() } as any;
+    const gateway = new WebhookStatusNotificationGateway(configService, metricsService);
 
     await gateway.notifyStatusChanged(event);
 
@@ -44,6 +47,7 @@ describe('WebhookStatusNotificationGateway', () => {
         body: JSON.stringify(event),
       }),
     );
+    expect(metricsService.recordIntegrationError).not.toHaveBeenCalled();
   });
 
   it('should not fail the business flow when delivery fails', async () => {
@@ -53,8 +57,10 @@ describe('WebhookStatusNotificationGateway', () => {
     const configService = {
       get: jest.fn().mockReturnValue('https://example.test/status'),
     } as unknown as ConfigService;
-    const gateway = new WebhookStatusNotificationGateway(configService);
+    const metricsService = { recordIntegrationError: jest.fn() } as any;
+    const gateway = new WebhookStatusNotificationGateway(configService, metricsService);
 
     await expect(gateway.notifyStatusChanged(event)).resolves.toBeUndefined();
+    expect(metricsService.recordIntegrationError).toHaveBeenCalledWith('status_notification_webhook');
   });
 });

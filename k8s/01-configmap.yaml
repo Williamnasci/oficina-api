@@ -8,3 +8,7 @@ data:
   JWT_EXPIRES_IN: "1d"
   CORS_ORIGIN: "*"
   AUTH_DEMO_USERNAME: "admin"
+  DD_ENV: "production"
+  DD_SERVICE: "oficina-api"
+  DD_TRACE_AGENT_PORT: "8126"
+  DD_LOGS_INJECTION: "true"

@@ -22,6 +22,6 @@ export class RegisterDiagnosisUseCase {
         serviceOrder.registerDiagnosis(input.diagnosis);
 
         await this.serviceOrderRepository.update(serviceOrder);
-        await this.statusNotificationGateway?.notifyStatusChanged({ serviceOrderId, status: serviceOrder.status, occurredAt: new Date().toISOString() });
+        await this.statusNotificationGateway?.notifyStatusChanged({ serviceOrderId, status: serviceOrder.status, occurredAt: new Date().toISOString(), createdAt: serviceOrder.createdAt.toISOString() });
     }
 }

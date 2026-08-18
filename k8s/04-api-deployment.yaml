@@ -45,6 +45,14 @@ spec:
           ports:
             - containerPort: 3000
               name: http
+          env:
+            # DD_AGENT_HOST via downward API: o Datadog Agent roda como
+            # DaemonSet (um pod por node) - o app conecta no agent do MESMO
+            # node onde esta rodando, nao num Service ClusterIP.
+            - name: DD_AGENT_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
           envFrom:
             - configMapRef:
                 name: oficina-api-config
