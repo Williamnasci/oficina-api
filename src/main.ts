@@ -1,6 +1,18 @@
+// dd-trace precisa ser inicializado antes de qualquer outro import para
+// conseguir instrumentar automaticamente (auto-patch) os modulos carregados
+// depois dele (express, pg, etc). So ativa quando DD_AGENT_HOST esta
+// definido, para nao tentar conectar num agent inexistente em dev/testes.
+if (process.env.DD_AGENT_HOST) {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require('dd-trace').init({
+    logInjection: true,
+  });
+}
+
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { Logger } from 'nestjs-pino';
 import helmet from 'helmet';
 import * as express from 'express';
 import { join } from 'path';
@@ -9,7 +21,8 @@ import { DomainExceptionFilter } from './shared/infrastructure/filters/domain-ex
 import { PrismaExceptionFilter } from './shared/infrastructure/filters/prisma-exception.filter';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
+  app.useLogger(app.get(Logger));
 
   app.use(
     helmet({

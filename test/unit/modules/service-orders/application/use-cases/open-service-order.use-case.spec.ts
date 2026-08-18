@@ -7,6 +7,7 @@ describe('OpenServiceOrderUseCase', () => {
     let serviceOrderRepo: any;
     let customerRepo: any;
     let vehicleRepo: any;
+    let metricsService: any;
 
     const input = {
         customer: {
@@ -45,7 +46,8 @@ describe('OpenServiceOrderUseCase', () => {
             create: jest.fn(),
             findByLicensePlate: jest.fn(),
         };
-        useCase = new OpenServiceOrderUseCase(serviceOrderRepo, customerRepo, vehicleRepo);
+        metricsService = { recordServiceOrderCreated: jest.fn() };
+        useCase = new OpenServiceOrderUseCase(serviceOrderRepo, customerRepo, vehicleRepo, metricsService);
     });
 
     it('should create customer, vehicle, order and items when none exist', async () => {

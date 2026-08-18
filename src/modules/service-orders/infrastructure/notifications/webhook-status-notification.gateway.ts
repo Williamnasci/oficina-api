@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { MetricsService } from '../../../../observability/metrics.service';
 import {
   ServiceOrderStatusChanged,
   StatusNotificationGateway,
@@ -9,7 +10,10 @@ import {
 export class WebhookStatusNotificationGateway extends StatusNotificationGateway {
   private readonly logger = new Logger(WebhookStatusNotificationGateway.name);
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly metricsService: MetricsService,
+  ) {
     super();
   }
 
@@ -34,11 +38,13 @@ export class WebhookStatusNotificationGateway extends StatusNotificationGateway 
       });
 
       if (!response.ok) {
+        this.metricsService.recordIntegrationError('status_notification_webhook');
         this.logger.warn(
           `Status notification returned HTTP ${response.status} for service order ${event.serviceOrderId}.`,
         );
       }
     } catch (error) {
+      this.metricsService.recordIntegrationError('status_notification_webhook');
       const reason = error instanceof Error ? error.message : 'unknown error';
       this.logger.warn(
         `Status notification failed for service order ${event.serviceOrderId}: ${reason}`,

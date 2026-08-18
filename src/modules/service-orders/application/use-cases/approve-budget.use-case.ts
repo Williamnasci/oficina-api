@@ -21,6 +21,6 @@ export class ApproveBudgetUseCase {
         serviceOrder.approveBudget();
 
         await this.serviceOrderRepository.update(serviceOrder);
-        await this.statusNotificationGateway?.notifyStatusChanged({ serviceOrderId, status: serviceOrder.status, occurredAt: new Date().toISOString() });
+        await this.statusNotificationGateway?.notifyStatusChanged({ serviceOrderId, status: serviceOrder.status, occurredAt: new Date().toISOString(), createdAt: serviceOrder.createdAt.toISOString() });
     }
 }

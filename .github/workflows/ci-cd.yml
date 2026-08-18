@@ -285,4 +285,47 @@ jobs:
           echo "Aguardando o rollout da API Oficina..."
           kubectl rollout status deployment/oficina-api -n oficina --timeout=180s
 
+      - name: Setup Helm
+        if: runner.os != 'Windows'
+        uses: azure/setup-helm@v4
+
+      - name: Deploy Datadog Agent
+        if: runner.os != 'Windows'
+        shell: bash
+        env:
+          KUBECONFIG: /home/runner/.kube/config
+          DATADOG_API_KEY: ${{ secrets.DATADOG_API_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${DATADOG_API_KEY:-}" ]; then
+              echo "DATADOG_API_KEY não configurado; pulando deploy do Datadog Agent."
+              exit 0
+          fi
+
+          echo "Instalando/atualizando o Datadog Agent via Helm..."
+          helm repo add datadog https://helm.datadoghq.com
+          helm repo update
+
+          # clusterAgent desabilitado: cluster single-node pequeno (t3.small,
+          # Free Tier) nao precisa de agregacao cluster-wide (kube-state-
+          # metrics etc) so pra este projeto academico - metricas de
+          # host/pod (kubelet) e os logs/traces do proprio Agent ja cobrem
+          # o que o desafio pede. kubelet.tlsVerify=false pelo mesmo motivo
+          # do metrics-server: certificado self-signed do Kind.
+          helm upgrade --install datadog-agent datadog/datadog \
+            --namespace datadog --create-namespace \
+            --set datadog.apiKey="${DATADOG_API_KEY}" \
+            --set datadog.site="us5.datadoghq.com" \
+            --set datadog.kubelet.tlsVerify=false \
+            --set datadog.logs.enabled=true \
+            --set datadog.logs.containerCollectAll=true \
+            --set datadog.apm.portEnabled=true \
+            --set datadog.prometheusScrape.enabled=true \
+            --set clusterAgent.enabled=false \
+            --set agents.containers.agent.resources.requests.cpu=100m \
+            --set agents.containers.agent.resources.requests.memory=256Mi \
+            --set agents.containers.agent.resources.limits.memory=512Mi \
+            --wait --timeout 5m
+
 

@@ -4,6 +4,7 @@ export type ServiceOrderStatusChanged = {
   serviceOrderId: string;
   status: ServiceOrderStatus;
   occurredAt: string;
+  createdAt: string;
 };
 
 export abstract class StatusNotificationGateway {

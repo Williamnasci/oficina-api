@@ -6,6 +6,7 @@ import { CustomerRepository } from '../../../customers/domain/repositories/custo
 import { VehicleRepository } from '../../../vehicles/domain/repositories/vehicle.repository';
 import { CreateServiceOrderDto } from '../dto/create-service-order.dto';
 import { DomainException } from '../../../../shared/domain/errors/domain.exception';
+import { MetricsService } from '../../../../observability/metrics.service';
 
 @Injectable()
 export class CreateServiceOrderUseCase {
@@ -16,6 +17,7 @@ export class CreateServiceOrderUseCase {
         private readonly customerRepository: CustomerRepository,
         @Inject(VehicleRepository)
         private readonly vehicleRepository: VehicleRepository,
+        private readonly metricsService: MetricsService,
     ) { }
 
     async execute(input: CreateServiceOrderDto): Promise<{ id: string }> {
@@ -56,6 +58,7 @@ export class CreateServiceOrderUseCase {
         });
 
         await this.serviceOrderRepository.create(serviceOrder);
+        this.metricsService.recordServiceOrderCreated();
 
         return { id: serviceOrder.id };
     }
