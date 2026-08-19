@@ -15,6 +15,12 @@ Este é o repositório da **aplicação principal**. Os demais componentes da Fa
 
 Decisões arquiteturais completas (RFCs, ADRs, diagramas) ficam em [`docs/`](docs/) neste repositório: [plano da Fase 3](docs/phase-3-plan.md), [diagrama de componentes](docs/architecture-components.md), [diagramas de sequência](docs/sequence-diagrams.md), [diagrama ER](docs/database-er.md).
 
+### Ambiente publicado
+
+- **API Gateway (entrada pública)**: `https://amveu1p6l4.execute-api.us-east-2.amazonaws.com` — `POST /auth/login` (público, emite JWT via `oficina-lambda-auth`), `GET /health` (público), `ANY /{proxy+}` (protegido pelo Lambda Authorizer, encaminha para a aplicação).
+- **Dashboard Datadog**: [Oficina API - Visão Geral](https://us5.datadoghq.com/dashboard/k2b-3e2-bz4/oficina-api---visao-geral) — volume de OS, tempo médio por status, erros de integração, latência, healthcheck.
+- **Custo**: a EC2 do cluster (`oficina-infra-k8s`) é destruída entre sessões de trabalho para não gerar gasto contínuo numa conta pessoal Free Tier — se o endpoint acima não responder, é porque a instância está desligada no momento; `terraform apply` em `oficina-infra-k8s` recria tudo automaticamente.
+
 ## Descrição do Projeto
 
 Sistema back-end para gestão de oficinas mecânicas, desenvolvido como entrega do **Tech Challenge Fase 2** da Pós-Tech FIAP em Arquitetura de Software.
@@ -457,26 +463,17 @@ Payload esperado:
 
 ## HPA e Metrics Server
 
-O HPA está criado e associado ao Deployment da API. Para demonstrar escalabilidade no cluster Kind, instale o Metrics Server e habilite a comunicação com os kubelets locais:
+O `metrics-server` é instalado automaticamente no bootstrap do cluster (`user_data.sh.tpl` em `oficina-infra-k8s`, com `--kubelet-insecure-tls` — Kind usa certificado de kubelet self-signed que o metrics-server não valida por padrão), não precisa de passo manual.
 
-```bash
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.8.1/components.yaml
-kubectl patch deployment metrics-server -n kube-system --type=json -p='[{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--kubelet-insecure-tls"}]'
-kubectl rollout status deployment/metrics-server -n kube-system
-kubectl top pods -n oficina
-```
+O HPA (`k8s/06-hpa.yaml`) foi **validado sob carga real**: gerando tráfego concorrente contra o `/health` via API Gateway, o HPA escalou de 2 para 6 réplicas (o máximo configurado) com métricas reais de CPU lidas pelo metrics-server (`cpu: 84%/70%`). Um dos 6 pods ficou `Pending` por falta de CPU no node único `t3.small` — limitação esperada de um cluster single-node, não um bug do HPA.
 
-O argumento `--kubelet-insecure-tls` é destinado somente ao cluster local de demonstração.
-
-Para gerar carga durante a gravação do vídeo:
+Para reproduzir a carga manualmente:
 
 ```bash
 kubectl apply -f k8s/demo/load-generator.yaml
 kubectl get hpa,pods -n oficina -w
 kubectl delete -f k8s/demo/load-generator.yaml
 ```
-
-Em clusters locais sem `metrics-server`, os targets de CPU e memória podem aparecer como `<unknown>`. Isso não invalida o provisionamento do HPA; apenas indica que o cluster não está expondo a API de métricas necessária para o cálculo dinâmico.
 
 ## Notificação Externa de Status
 
@@ -488,7 +485,8 @@ O evento enviado contém:
 {
   "serviceOrderId": "id-da-ordem",
   "status": "APPROVED",
-  "occurredAt": "2026-07-14T00:00:00.000Z"
+  "occurredAt": "2026-07-14T00:00:00.000Z",
+  "createdAt": "2026-07-14T00:00:00.000Z"
 }
 ```
 
@@ -635,6 +633,8 @@ Payload de demonstração:
 
 Use o token retornado como Bearer Token no Swagger.
 
+> **Nota (Fase 3):** essa é a rota de login local/demo (`admin`/`admin`, útil pra testar direto no Swagger). No ambiente publicado via API Gateway, a autenticação real é por CPF, emitida pela função Lambda `oficina-auth-login` (ver `oficina-lambda-auth`) — o guard deste serviço (`jwt.strategy.ts`) valida os dois tipos de token, porque o `JWT_SECRET` é compartilhado com a Lambda (mesmo segredo no Secrets Manager).
+
 ## Testes
 
 O projeto possui testes automatizados unitários, de integração e end-to-end (e2e) para os fluxos principais da aplicação.
@@ -689,16 +689,23 @@ npm run test:integration:db   # fluxo transacional de orçamento/estoque contra 
 
 ## Observabilidade
 
-O projeto possui observabilidade mínima viável:
+### Datadog (Fase 3, produção)
+
+- **APM (latência/tracing)**: `dd-trace` inicializado antes de qualquer outro import em `main.ts`, só ativa quando `DD_AGENT_HOST` está definido (não tenta conectar em dev/testes).
+- **Logs JSON estruturados com correlation ID**: `nestjs-pino` substitui o logger padrão do Nest; cada requisição ganha um `req.id`, e o `dd-trace` injeta `dd.trace_id`/`dd.span_id` quando ativo — correlaciona log com trace no Datadog.
+- **Métricas de negócio**: `service_orders_created_total` (volume de OS), `service_order_time_to_status_seconds` labeled por status (tempo médio até cada status), `integration_errors_total` (erros do webhook de notificação) — reaproveitam o endpoint `/metrics` Prometheus já existente, scrapado pelo Datadog Agent (`prometheusScrape.enabled`).
+- **Datadog Agent**: instalado via Helm no CI/CD (`clusterAgent` desabilitado — cluster single-node pequeno não precisa de agregação cluster-wide), como DaemonSet no mesmo node da aplicação (`DD_AGENT_HOST` via downward API `status.hostIP`).
+- **Dashboard**: [Oficina API - Visão Geral](https://us5.datadoghq.com/dashboard/k2b-3e2-bz4/oficina-api---visao-geral) — volume diário de OS, tempo médio por status, erros de integração, latência média, healthcheck.
+- **Monitors/alertas**: healthcheck falhando (`healthcheck_status < 1` por 5min), erros de integração acima do normal (`> 5` em 15min).
+
+### Prometheus (Fase 2, local)
 
 - `/health` para saúde da aplicação e banco.
-- `/metrics` no formato Prometheus.
-- Métricas `requests_total`, `request_duration_seconds` e `healthcheck_status`.
-- Prometheus e Grafana no Docker Compose.
-- Dashboard inicial versionado para requisições, latência e health checks.
+- `/metrics` no formato Prometheus (mesma fonte que o Datadog Agent scrapa em produção).
+- Prometheus e Grafana no Docker Compose, para inspeção local sem depender de uma conta Datadog.
 
-OpenTelemetry, Loki e Jaeger foram avaliados como evolução futura para evitar complexidade excessiva no escopo acadêmico atual. A proposta arquitetural está descrita em `docs/observability.md`.
+OpenTelemetry, Loki e Jaeger foram avaliados e descartados para não introduzir complexidade duplicada — o Datadog já cobre APM, logs e métricas num único agente. A proposta arquitetural original (Fase 2) está descrita em `docs/observability.md`.
 
 ## Autoria
 
-Projeto desenvolvido como entrega do Tech Challenge Fase 2 da Pós-Tech FIAP em Arquitetura de Software.
+Projeto desenvolvido como entrega do Tech Challenge da Pós-Tech FIAP em Arquitetura de Software — Fase 2 (base funcional: NestJS, Prisma, Docker, CI/CD, Kubernetes local) e Fase 3 (evolução para nuvem: split em 4 repositórios, RDS, Lambda de autenticação por CPF, API Gateway, Terraform, Datadog).
