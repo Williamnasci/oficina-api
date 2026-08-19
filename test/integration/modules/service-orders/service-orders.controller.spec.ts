@@ -23,256 +23,305 @@ import { JwtAuthGuard } from '../../../../src/modules/auth/jwt-auth.guard';
 import { RolesGuard } from '../../../../src/modules/auth/roles.guard';
 
 describe('ServiceOrdersController (integration)', () => {
-    let app: INestApplication;
+  let app: INestApplication;
 
-    beforeEach(async () => {
-        const moduleRef = await Test.createTestingModule({
-            controllers: [ServiceOrdersController],
-            providers: [
-                { provide: CreateServiceOrderUseCase, useValue: { execute: jest.fn().mockResolvedValue({ id: 'service-order-1' }) } },
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [ServiceOrdersController],
+      providers: [
+        {
+          provide: CreateServiceOrderUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({ id: 'service-order-1' }),
+          },
+        },
+        {
+          provide: GetServiceOrderUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({
+              id: 'service-order-1',
+              customerId: 'customer-1',
+              vehicleId: 'vehicle-1',
+              status: 'RECEIVED',
+              diagnosis: null,
+              servicesAmount: 150,
+              stockItemsAmount: 400,
+              totalAmount: 550,
+              createdAt: new Date(),
+              startedAt: null,
+              finishedAt: null,
+              deliveredAt: null,
+              updatedAt: new Date(),
+              services: [
                 {
-                    provide: GetServiceOrderUseCase, useValue: {
-                        execute: jest.fn().mockResolvedValue({
-                            id: 'service-order-1',
-                            customerId: 'customer-1',
-                            vehicleId: 'vehicle-1',
-                            status: 'RECEIVED',
-                            diagnosis: null,
-                            servicesAmount: 150,
-                            stockItemsAmount: 400,
-                            totalAmount: 550,
-                            createdAt: new Date(),
-                            startedAt: null,
-                            finishedAt: null,
-                            deliveredAt: null,
-                            updatedAt: new Date(),
-                            services: [
-                                {
-                                    id: 'item-1',
-                                    serviceId: 'service-1',
-                                    name: 'Troca de óleo',
-                                    quantity: 1,
-                                    unitPrice: 150,
-                                    totalPrice: 150,
-                                },
-                            ],
-                            stockItems: [
-                                {
-                                    id: 'item-2',
-                                    stockItemId: 'stock-1',
-                                    name: 'Pastilha de freio',
-                                    quantity: 2,
-                                    unitPrice: 200,
-                                    totalPrice: 400,
-                                },
-                            ],
-                        })
-                    }
+                  id: 'item-1',
+                  serviceId: 'service-1',
+                  name: 'Troca de óleo',
+                  quantity: 1,
+                  unitPrice: 150,
+                  totalPrice: 150,
                 },
-                { provide: RegisterDiagnosisUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: SendBudgetForApprovalUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: StartServiceOrderExecutionUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: FinishServiceOrderUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: DeliverServiceOrderUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: AddServiceToServiceOrderUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: AddStockItemToServiceOrderUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: ApproveBudgetUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                { provide: FindServiceOrdersByDocumentUseCase, useValue: { execute: jest.fn().mockResolvedValue([]) } },
+              ],
+              stockItems: [
                 {
-                    provide: GetAverageExecutionTimeUseCase,
-                    useValue: {
-                        execute: jest.fn().mockResolvedValue({
-                            averageExecutionTimeInMinutes: 150,
-                            averageExecutionTimeFormatted: '2h 30m',
-                        }),
-                    },
+                  id: 'item-2',
+                  stockItemId: 'stock-1',
+                  name: 'Pastilha de freio',
+                  quantity: 2,
+                  unitPrice: 200,
+                  totalPrice: 400,
                 },
-                {
-                    provide: GetServiceOrderStatusUseCase,
-                    useValue: {
-                        execute: jest.fn().mockResolvedValue({
-                            id: 'service-order-1',
-                            status: 'RECEIVED',
-                            statusLabel: 'Recebida',
-                            updatedAt: new Date(),
-                        }),
-                    },
-                },
-                { provide: HandleBudgetDecisionUseCase, useValue: { execute: jest.fn().mockResolvedValue(undefined) } },
-                {
-                    provide: ListServiceOrdersUseCase,
-                    useValue: {
-                        execute: jest.fn().mockResolvedValue([
-                            {
-                                id: 'service-order-1',
-                                customerId: 'customer-1',
-                                vehicleId: 'vehicle-1',
-                                status: 'RECEIVED',
-                                diagnosis: null,
-                                servicesAmount: 150,
-                                stockItemsAmount: 400,
-                                totalAmount: 550,
-                                createdAt: new Date(),
-                                startedAt: null,
-                                finishedAt: null,
-                                deliveredAt: null,
-                                updatedAt: new Date(),
-                            },
-                        ]),
-                    },
-                },
-                {
-                    provide: ListOperationalServiceOrdersUseCase,
-                    useValue: {
-                        execute: jest.fn().mockResolvedValue([
-                            {
-                                id: 'service-order-1',
-                                customerId: 'customer-1',
-                                vehicleId: 'vehicle-1',
-                                status: 'IN_PROGRESS',
-                                diagnosis: null,
-                                servicesAmount: 0,
-                                stockItemsAmount: 0,
-                                totalAmount: 0,
-                                createdAt: new Date(),
-                                startedAt: new Date(),
-                                finishedAt: null,
-                                deliveredAt: null,
-                                updatedAt: new Date(),
-                            },
-                        ]),
-                    },
-                },
-                { provide: OpenServiceOrderUseCase, useValue: { execute: jest.fn().mockResolvedValue({ id: 'service-order-1' }) } },
-            ],
-        })
-        .overrideGuard(JwtAuthGuard)
-        .useValue({ canActivate: () => true })
-        .overrideGuard(RolesGuard)
-        .useValue({ canActivate: () => true })
-        .compile();
+              ],
+            }),
+          },
+        },
+        {
+          provide: RegisterDiagnosisUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: SendBudgetForApprovalUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: StartServiceOrderExecutionUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: FinishServiceOrderUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: DeliverServiceOrderUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: AddServiceToServiceOrderUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: AddStockItemToServiceOrderUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: ApproveBudgetUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: FindServiceOrdersByDocumentUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue([]) },
+        },
+        {
+          provide: GetAverageExecutionTimeUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({
+              averageExecutionTimeInMinutes: 150,
+              averageExecutionTimeFormatted: '2h 30m',
+            }),
+          },
+        },
+        {
+          provide: GetServiceOrderStatusUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({
+              id: 'service-order-1',
+              status: 'RECEIVED',
+              statusLabel: 'Recebida',
+              updatedAt: new Date(),
+            }),
+          },
+        },
+        {
+          provide: HandleBudgetDecisionUseCase,
+          useValue: { execute: jest.fn().mockResolvedValue(undefined) },
+        },
+        {
+          provide: ListServiceOrdersUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue([
+              {
+                id: 'service-order-1',
+                customerId: 'customer-1',
+                vehicleId: 'vehicle-1',
+                status: 'RECEIVED',
+                diagnosis: null,
+                servicesAmount: 150,
+                stockItemsAmount: 400,
+                totalAmount: 550,
+                createdAt: new Date(),
+                startedAt: null,
+                finishedAt: null,
+                deliveredAt: null,
+                updatedAt: new Date(),
+              },
+            ]),
+          },
+        },
+        {
+          provide: ListOperationalServiceOrdersUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue([
+              {
+                id: 'service-order-1',
+                customerId: 'customer-1',
+                vehicleId: 'vehicle-1',
+                status: 'IN_PROGRESS',
+                diagnosis: null,
+                servicesAmount: 0,
+                stockItemsAmount: 0,
+                totalAmount: 0,
+                createdAt: new Date(),
+                startedAt: new Date(),
+                finishedAt: null,
+                deliveredAt: null,
+                updatedAt: new Date(),
+              },
+            ]),
+          },
+        },
+        {
+          provide: OpenServiceOrderUseCase,
+          useValue: {
+            execute: jest.fn().mockResolvedValue({ id: 'service-order-1' }),
+          },
+        },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(RolesGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
-        app = moduleRef.createNestApplication();
-        app.useGlobalPipes(new ValidationPipe({
-            whitelist: true,
-            forbidNonWhitelisted: true,
-            transform: true,
-        }));
-        await app.init();
-    });
+    app = moduleRef.createNestApplication();
+    app.useGlobalPipes(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      }),
+    );
+    await app.init();
+  });
 
-    afterEach(async () => {
-        await app?.close();
-    });
+  afterEach(async () => {
+    await app?.close();
+  });
 
-    it('GET /service-orders should return service order history', async () => {
-        await request(app.getHttpServer())
-            .get('/service-orders')
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body).toHaveLength(1);
-                expect(body[0].id).toBe('service-order-1');
-                expect(body[0].totalAmount).toBe(550);
-            });
-    });
+  it('GET /service-orders should return service order history', async () => {
+    await request(app.getHttpServer())
+      .get('/service-orders')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toHaveLength(1);
+        expect(body[0].id).toBe('service-order-1');
+        expect(body[0].totalAmount).toBe(550);
+      });
+  });
 
-    it('GET /service-orders/:id should return service order details with items', async () => {
-        await request(app.getHttpServer())
-            .get('/service-orders/service-order-1')
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body.id).toBe('service-order-1');
-                expect(body.services).toHaveLength(1);
-                expect(body.stockItems).toHaveLength(1);
-                expect(body.totalAmount).toBe(550);
-            });
-    });
+  it('GET /service-orders/:id should return service order details with items', async () => {
+    await request(app.getHttpServer())
+      .get('/service-orders/service-order-1')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.id).toBe('service-order-1');
+        expect(body.services).toHaveLength(1);
+        expect(body.stockItems).toHaveLength(1);
+        expect(body.totalAmount).toBe(550);
+      });
+  });
 
-    it('POST /service-orders should create a service order', async () => {
-        await request(app.getHttpServer())
-            .post('/service-orders')
-            .send({ customerId: '18201d07-08aa-4e2f-ae0e-35a06e0e5e49', vehicleId: '70af8254-8ffa-42d6-8593-c0a80b2be3a5' })
-            .expect(201)
-            .expect(({ body }) => {
-                expect(body.id).toBe('service-order-1');
-            });
-    });
+  it('POST /service-orders should create a service order', async () => {
+    await request(app.getHttpServer())
+      .post('/service-orders')
+      .send({
+        customerId: '18201d07-08aa-4e2f-ae0e-35a06e0e5e49',
+        vehicleId: '70af8254-8ffa-42d6-8593-c0a80b2be3a5',
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.id).toBe('service-order-1');
+      });
+  });
 
-    it('POST /service-orders should accept customer document', async () => {
-        await request(app.getHttpServer())
-            .post('/service-orders')
-            .send({ customerDocument: '52998224725', vehicleId: '70af8254-8ffa-42d6-8593-c0a80b2be3a5' })
-            .expect(201)
-            .expect(({ body }) => {
-                expect(body.id).toBe('service-order-1');
-            });
-    });
+  it('POST /service-orders should accept customer document', async () => {
+    await request(app.getHttpServer())
+      .post('/service-orders')
+      .send({
+        customerDocument: '52998224725',
+        vehicleId: '70af8254-8ffa-42d6-8593-c0a80b2be3a5',
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.id).toBe('service-order-1');
+      });
+  });
 
-    it('POST /service-orders/opening should open a complete service order', async () => {
-        await request(app.getHttpServer())
-            .post('/service-orders/opening')
-            .send({
-                customer: {
-                    name: 'John Doe',
-                    documentType: 'CPF',
-                    document: '52998224725',
-                    email: 'john@example.com',
-                },
-                vehicle: {
-                    licensePlate: 'ABC1D23',
-                    brand: 'Toyota',
-                    model: 'Corolla',
-                    year: 2022,
-                },
-                services: [{ serviceId: 'service-1', quantity: 1 }],
-                stockItems: [{ stockItemId: 'stock-1', quantity: 2 }],
-            })
-            .expect(201)
-            .expect(({ body }) => {
-                expect(body.id).toBe('service-order-1');
-            });
-    });
+  it('POST /service-orders/opening should open a complete service order', async () => {
+    await request(app.getHttpServer())
+      .post('/service-orders/opening')
+      .send({
+        customer: {
+          name: 'John Doe',
+          documentType: 'CPF',
+          document: '52998224725',
+          email: 'john@example.com',
+        },
+        vehicle: {
+          licensePlate: 'ABC1D23',
+          brand: 'Toyota',
+          model: 'Corolla',
+          year: 2022,
+        },
+        services: [{ serviceId: 'service-1', quantity: 1 }],
+        stockItems: [{ stockItemId: 'stock-1', quantity: 2 }],
+      })
+      .expect(201)
+      .expect(({ body }) => {
+        expect(body.id).toBe('service-order-1');
+      });
+  });
 
-    it('GET /service-orders/operational-queue should return prioritized service orders', async () => {
-        await request(app.getHttpServer())
-            .get('/service-orders/operational-queue')
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body).toHaveLength(1);
-                expect(body[0].status).toBe('IN_PROGRESS');
-            });
-    });
+  it('GET /service-orders/operational-queue should return prioritized service orders', async () => {
+    await request(app.getHttpServer())
+      .get('/service-orders/operational-queue')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body).toHaveLength(1);
+        expect(body[0].status).toBe('IN_PROGRESS');
+      });
+  });
 
-    it('GET /service-orders/:id/status should return service order status', async () => {
-        await request(app.getHttpServer())
-            .get('/service-orders/service-order-1/status')
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body.status).toBe('RECEIVED');
-                expect(body.statusLabel).toBe('Recebida');
-            });
-    });
+  it('GET /service-orders/:id/status should return service order status', async () => {
+    await request(app.getHttpServer())
+      .get('/service-orders/service-order-1/status')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.status).toBe('RECEIVED');
+        expect(body.statusLabel).toBe('Recebida');
+      });
+  });
 
-    it('GET /service-orders/metrics/average-execution-time should return execution metrics', async () => {
-        await request(app.getHttpServer())
-            .get('/service-orders/metrics/average-execution-time')
-            .expect(200)
-            .expect(({ body }) => {
-                expect(body.averageExecutionTimeInMinutes).toBe(150);
-                expect(body.averageExecutionTimeFormatted).toBe('2h 30m');
-            });
-    });
+  it('GET /service-orders/metrics/average-execution-time should return execution metrics', async () => {
+    await request(app.getHttpServer())
+      .get('/service-orders/metrics/average-execution-time')
+      .expect(200)
+      .expect(({ body }) => {
+        expect(body.averageExecutionTimeInMinutes).toBe(150);
+        expect(body.averageExecutionTimeFormatted).toBe('2h 30m');
+      });
+  });
 
-    it('PATCH /service-orders/:id/approve-budget should return 204', async () => {
-        await request(app.getHttpServer())
-            .patch('/service-orders/service-order-1/approve-budget')
-            .expect(204);
-    });
+  it('PATCH /service-orders/:id/approve-budget should return 204', async () => {
+    await request(app.getHttpServer())
+      .patch('/service-orders/service-order-1/approve-budget')
+      .expect(204);
+  });
 
-    it('POST /service-orders/:id/budget-decision should return 204', async () => {
-        await request(app.getHttpServer())
-            .post('/service-orders/service-order-1/budget-decision')
-            .send({ decision: 'APPROVED' })
-            .expect(204);
-    });
+  it('POST /service-orders/:id/budget-decision should return 204', async () => {
+    await request(app.getHttpServer())
+      .post('/service-orders/service-order-1/budget-decision')
+      .send({ decision: 'APPROVED' })
+      .expect(204);
+  });
 });

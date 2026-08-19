@@ -1,30 +1,30 @@
 import { ApiProperty } from '@nestjs/swagger';
 
 export class StockItemResponseDto {
-    @ApiProperty()
-    id: string;
+  @ApiProperty()
+  id: string;
 
-    @ApiProperty()
-    name: string;
+  @ApiProperty()
+  name: string;
 
-    @ApiProperty({ nullable: true })
-    description: string | null;
+  @ApiProperty({ nullable: true })
+  description: string | null;
 
-    @ApiProperty({ nullable: true })
-    sku: string | null;
+  @ApiProperty({ nullable: true })
+  sku: string | null;
 
-    @ApiProperty()
-    quantity: number;
+  @ApiProperty()
+  quantity: number;
 
-    @ApiProperty()
-    unitPrice: number;
+  @ApiProperty()
+  unitPrice: number;
 
-    @ApiProperty()
-    isActive: boolean;
+  @ApiProperty()
+  isActive: boolean;
 
-    @ApiProperty()
-    createdAt: Date;
+  @ApiProperty()
+  createdAt: Date;
 
-    @ApiProperty()
-    updatedAt: Date;
+  @ApiProperty()
+  updatedAt: Date;
 }

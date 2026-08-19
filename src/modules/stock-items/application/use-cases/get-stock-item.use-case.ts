@@ -4,28 +4,28 @@ import { StockItemResponseDto } from '../dto/stock-item-response.dto';
 
 @Injectable()
 export class GetStockItemUseCase {
-    constructor(
-        @Inject(StockItemRepository)
-        private readonly stockItemRepository: StockItemRepository,
-    ) { }
+  constructor(
+    @Inject(StockItemRepository)
+    private readonly stockItemRepository: StockItemRepository,
+  ) {}
 
-    async execute(id: string): Promise<StockItemResponseDto> {
-        const stockItem = await this.stockItemRepository.findById(id);
+  async execute(id: string): Promise<StockItemResponseDto> {
+    const stockItem = await this.stockItemRepository.findById(id);
 
-        if (!stockItem) {
-            throw new NotFoundException('Stock item not found.');
-        }
-
-        return {
-            id: stockItem.id,
-            name: stockItem.name,
-            description: stockItem.description,
-            sku: stockItem.sku,
-            quantity: stockItem.quantity,
-            unitPrice: stockItem.unitPrice,
-            isActive: stockItem.isActive,
-            createdAt: stockItem.createdAt,
-            updatedAt: stockItem.updatedAt,
-        };
+    if (!stockItem) {
+      throw new NotFoundException('Stock item not found.');
     }
+
+    return {
+      id: stockItem.id,
+      name: stockItem.name,
+      description: stockItem.description,
+      sku: stockItem.sku,
+      quantity: stockItem.quantity,
+      unitPrice: stockItem.unitPrice,
+      isActive: stockItem.isActive,
+      createdAt: stockItem.createdAt,
+      updatedAt: stockItem.updatedAt,
+    };
+  }
 }

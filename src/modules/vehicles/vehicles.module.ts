@@ -9,18 +9,18 @@ import { PrismaVehicleRepository } from './infrastructure/repositories/prisma-ve
 import { VehiclesController } from './interfaces/http/controllers/vehicles.controller';
 
 @Module({
-    controllers: [VehiclesController],
-    providers: [
-        CreateVehicleUseCase,
-        GetVehicleUseCase,
-        ListVehiclesUseCase,
-        UpdateVehicleUseCase,
-        DeleteVehicleUseCase,
-        {
-            provide: VehicleRepository,
-            useClass: PrismaVehicleRepository,
-        },
-    ],
-    exports: [VehicleRepository],
+  controllers: [VehiclesController],
+  providers: [
+    CreateVehicleUseCase,
+    GetVehicleUseCase,
+    ListVehiclesUseCase,
+    UpdateVehicleUseCase,
+    DeleteVehicleUseCase,
+    {
+      provide: VehicleRepository,
+      useClass: PrismaVehicleRepository,
+    },
+  ],
+  exports: [VehicleRepository],
 })
-export class VehiclesModule { }
+export class VehiclesModule {}

@@ -21,9 +21,14 @@ export class MetricsStatusNotificationGateway extends StatusNotificationGateway 
 
   async notifyStatusChanged(event: ServiceOrderStatusChanged): Promise<void> {
     const durationSeconds =
-      (new Date(event.occurredAt).getTime() - new Date(event.createdAt).getTime()) / 1000;
+      (new Date(event.occurredAt).getTime() -
+        new Date(event.createdAt).getTime()) /
+      1000;
 
-    this.metricsService.recordTimeToStatus(event.status, Math.max(durationSeconds, 0));
+    this.metricsService.recordTimeToStatus(
+      event.status,
+      Math.max(durationSeconds, 0),
+    );
 
     await this.webhookGateway.notifyStatusChanged(event);
   }

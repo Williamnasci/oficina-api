@@ -6,30 +6,33 @@ import { DomainException } from '../../../../shared/domain/errors/domain.excepti
  * Mercosul format: ABC1D23
  */
 export class LicensePlate {
-    private readonly _value: string;
+  private readonly _value: string;
 
-    constructor(value: string) {
-        const normalizedValue = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  constructor(value: string) {
+    const normalizedValue = value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
 
-        const oldFormatRegex = /^[A-Z]{3}[0-9]{4}$/;
-        const mercosulFormatRegex = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
+    const oldFormatRegex = /^[A-Z]{3}[0-9]{4}$/;
+    const mercosulFormatRegex = /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/;
 
-        if (!oldFormatRegex.test(normalizedValue) && !mercosulFormatRegex.test(normalizedValue)) {
-            throw new DomainException('Invalid Brazilian license plate.');
-        }
-
-        this._value = normalizedValue;
+    if (
+      !oldFormatRegex.test(normalizedValue) &&
+      !mercosulFormatRegex.test(normalizedValue)
+    ) {
+      throw new DomainException('Invalid Brazilian license plate.');
     }
 
-    get value(): string {
-        return this._value;
-    }
+    this._value = normalizedValue;
+  }
 
-    get isOldFormat(): boolean {
-        return /^[A-Z]{3}[0-9]{4}$/.test(this._value);
-    }
+  get value(): string {
+    return this._value;
+  }
 
-    get isMercosulFormat(): boolean {
-        return /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(this._value);
-    }
+  get isOldFormat(): boolean {
+    return /^[A-Z]{3}[0-9]{4}$/.test(this._value);
+  }
+
+  get isMercosulFormat(): boolean {
+    return /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(this._value);
+  }
 }

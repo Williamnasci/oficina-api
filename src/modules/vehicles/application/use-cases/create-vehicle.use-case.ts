@@ -7,23 +7,23 @@ import { CreateVehicleDto } from '../dto/create-vehicle.dto';
 
 @Injectable()
 export class CreateVehicleUseCase {
-    constructor(
-        @Inject(VehicleRepository)
-        private readonly vehicleRepository: VehicleRepository,
-    ) { }
+  constructor(
+    @Inject(VehicleRepository)
+    private readonly vehicleRepository: VehicleRepository,
+  ) {}
 
-    async execute(input: CreateVehicleDto): Promise<{ id: string }> {
-        const vehicle = new Vehicle({
-            id: randomUUID(),
-            customerId: input.customerId,
-            licensePlate: new LicensePlate(input.licensePlate),
-            brand: input.brand,
-            model: input.model,
-            year: input.year,
-        });
+  async execute(input: CreateVehicleDto): Promise<{ id: string }> {
+    const vehicle = new Vehicle({
+      id: randomUUID(),
+      customerId: input.customerId,
+      licensePlate: new LicensePlate(input.licensePlate),
+      brand: input.brand,
+      model: input.model,
+      year: input.year,
+    });
 
-        await this.vehicleRepository.create(vehicle);
+    await this.vehicleRepository.create(vehicle);
 
-        return { id: vehicle.id };
-    }
+    return { id: vehicle.id };
+  }
 }

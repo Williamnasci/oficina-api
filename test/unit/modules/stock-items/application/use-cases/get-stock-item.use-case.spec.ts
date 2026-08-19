@@ -3,24 +3,28 @@ import { StockItemRepository } from '../../../../../../src/modules/stock-items/d
 import { NotFoundException } from '@nestjs/common';
 
 describe('GetStockItemUseCase', () => {
-    let useCase: GetStockItemUseCase;
-    let repository: jest.Mocked<StockItemRepository>;
+  let useCase: GetStockItemUseCase;
+  let repository: jest.Mocked<StockItemRepository>;
 
-    beforeEach(() => {
-        repository = {
-            findById: jest.fn(),
-        } as any;
-        useCase = new GetStockItemUseCase(repository);
-    });
+  beforeEach(() => {
+    repository = {
+      findById: jest.fn(),
+    } as any;
+    useCase = new GetStockItemUseCase(repository);
+  });
 
-    it('should return item', async () => {
-        repository.findById.mockResolvedValue({ id: '1', name: 'Item', quantity: 1 } as any);
-        const result = await useCase.execute('1');
-        expect(result.id).toBe('1');
-    });
+  it('should return item', async () => {
+    repository.findById.mockResolvedValue({
+      id: '1',
+      name: 'Item',
+      quantity: 1,
+    } as any);
+    const result = await useCase.execute('1');
+    expect(result.id).toBe('1');
+  });
 
-    it('should throw if not found', async () => {
-        repository.findById.mockResolvedValue(null);
-        await expect(useCase.execute('1')).rejects.toThrow(NotFoundException);
-    });
+  it('should throw if not found', async () => {
+    repository.findById.mockResolvedValue(null);
+    await expect(useCase.execute('1')).rejects.toThrow(NotFoundException);
+  });
 });

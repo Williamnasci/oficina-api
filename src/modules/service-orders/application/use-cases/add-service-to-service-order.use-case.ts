@@ -4,22 +4,26 @@ import { AddServiceToServiceOrderDto } from '../dto/add-service-to-service-order
 
 @Injectable()
 export class AddServiceToServiceOrderUseCase {
-    constructor(
-        @Inject(ServiceOrderRepository)
-        private readonly serviceOrderRepository: ServiceOrderRepository,
-    ) { }
+  constructor(
+    @Inject(ServiceOrderRepository)
+    private readonly serviceOrderRepository: ServiceOrderRepository,
+  ) {}
 
-    async execute(serviceOrderId: string, input: AddServiceToServiceOrderDto): Promise<void> {
-        const serviceOrder = await this.serviceOrderRepository.findById(serviceOrderId);
+  async execute(
+    serviceOrderId: string,
+    input: AddServiceToServiceOrderDto,
+  ): Promise<void> {
+    const serviceOrder =
+      await this.serviceOrderRepository.findById(serviceOrderId);
 
-        if (!serviceOrder) {
-            throw new NotFoundException('Service order not found.');
-        }
-
-        await this.serviceOrderRepository.addServiceToOrder(
-            serviceOrderId,
-            input.serviceId,
-            input.quantity,
-        );
+    if (!serviceOrder) {
+      throw new NotFoundException('Service order not found.');
     }
+
+    await this.serviceOrderRepository.addServiceToOrder(
+      serviceOrderId,
+      input.serviceId,
+      input.quantity,
+    );
+  }
 }

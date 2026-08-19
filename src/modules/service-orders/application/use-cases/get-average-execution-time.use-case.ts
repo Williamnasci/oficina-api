@@ -4,25 +4,27 @@ import { ServiceOrderMetricsResponseDto } from '../dto/service-order-metrics-res
 
 @Injectable()
 export class GetAverageExecutionTimeUseCase {
-    constructor(
-        @Inject(ServiceOrderRepository)
-        private readonly serviceOrderRepository: ServiceOrderRepository,
-    ) { }
+  constructor(
+    @Inject(ServiceOrderRepository)
+    private readonly serviceOrderRepository: ServiceOrderRepository,
+  ) {}
 
-    async execute(): Promise<ServiceOrderMetricsResponseDto> {
-        const averageExecutionTimeInMinutes =
-            await this.serviceOrderRepository.getAverageExecutionTimeInMinutes();
+  async execute(): Promise<ServiceOrderMetricsResponseDto> {
+    const averageExecutionTimeInMinutes =
+      await this.serviceOrderRepository.getAverageExecutionTimeInMinutes();
 
-        return {
-            averageExecutionTimeInMinutes,
-            averageExecutionTimeFormatted: this.formatMinutes(averageExecutionTimeInMinutes),
-        };
-    }
+    return {
+      averageExecutionTimeInMinutes,
+      averageExecutionTimeFormatted: this.formatMinutes(
+        averageExecutionTimeInMinutes,
+      ),
+    };
+  }
 
-    private formatMinutes(minutes: number): string {
-        const hours = Math.floor(minutes / 60);
-        const remainingMinutes = minutes % 60;
+  private formatMinutes(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
 
-        return `${hours}h ${remainingMinutes}m`;
-    }
+    return `${hours}h ${remainingMinutes}m`;
+  }
 }

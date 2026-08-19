@@ -2,78 +2,84 @@ import { DomainException } from '../../../../shared/domain/errors/domain.excepti
 import { CustomerDocumentType } from '../enums/customer-document-type.enum';
 
 export class CustomerDocument {
-    private readonly _value: string;
-    private readonly _type: CustomerDocumentType;
+  private readonly _value: string;
+  private readonly _type: CustomerDocumentType;
 
-    constructor(value: string, type: CustomerDocumentType) {
-        const normalizedValue = value.replace(/\D/g, '');
+  constructor(value: string, type: CustomerDocumentType) {
+    const normalizedValue = value.replace(/\D/g, '');
 
-        if (type === CustomerDocumentType.CPF && !this.isValidCPF(normalizedValue)) {
-            throw new DomainException('Invalid CPF.');
-        }
-
-        if (type === CustomerDocumentType.CNPJ && !this.isValidCNPJ(normalizedValue)) {
-            throw new DomainException('Invalid CNPJ.');
-        }
-
-        this._value = normalizedValue;
-        this._type = type;
+    if (
+      type === CustomerDocumentType.CPF &&
+      !this.isValidCPF(normalizedValue)
+    ) {
+      throw new DomainException('Invalid CPF.');
     }
 
-    /**
-     * Reconstitutes a CustomerDocument from persistence without re-validating.
-     * Data from the database was already validated at creation time.
-     */
-    static restore(value: string, type: CustomerDocumentType): CustomerDocument {
-        const instance = Object.create(CustomerDocument.prototype);
-        instance._value = value;
-        instance._type = type;
-        return instance;
+    if (
+      type === CustomerDocumentType.CNPJ &&
+      !this.isValidCNPJ(normalizedValue)
+    ) {
+      throw new DomainException('Invalid CNPJ.');
     }
 
-    private isValidCPF(cpf: string): boolean {
-        if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
-        
-        const calcDigit = (factor: number, max: number) => {
-            let total = 0;
-            for (let i = 0; i < max; i++) {
-                total += parseInt(cpf[i]) * factor--;
-            }
-            const remainder = (total * 10) % 11;
-            return remainder === 10 ? 0 : remainder;
-        };
+    this._value = normalizedValue;
+    this._type = type;
+  }
 
-        const digit1 = calcDigit(10, 9);
-        const digit2 = calcDigit(11, 10);
-        
-        return digit1 === parseInt(cpf[9]) && digit2 === parseInt(cpf[10]);
-    }
+  /**
+   * Reconstitutes a CustomerDocument from persistence without re-validating.
+   * Data from the database was already validated at creation time.
+   */
+  static restore(value: string, type: CustomerDocumentType): CustomerDocument {
+    const instance = Object.create(CustomerDocument.prototype);
+    instance._value = value;
+    instance._type = type;
+    return instance;
+  }
 
-    private isValidCNPJ(cnpj: string): boolean {
-        if (!/^\d{14}$/.test(cnpj) || /^(\d)\1{13}$/.test(cnpj)) return false;
+  private isValidCPF(cpf: string): boolean {
+    if (!/^\d{11}$/.test(cpf) || /^(\d)\1{10}$/.test(cpf)) return false;
 
-        const calcDigit = (length: number) => {
-            let total = 0;
-            let factor = length - 7;
-            for (let i = length; i >= 1; i--) {
-                total += parseInt(cnpj[length - i]) * factor--;
-                if (factor < 2) factor = 9;
-            }
-            const remainder = total % 11;
-            return remainder < 2 ? 0 : 11 - remainder;
-        };
+    const calcDigit = (factor: number, max: number) => {
+      let total = 0;
+      for (let i = 0; i < max; i++) {
+        total += parseInt(cpf[i]) * factor--;
+      }
+      const remainder = (total * 10) % 11;
+      return remainder === 10 ? 0 : remainder;
+    };
 
-        const digit1 = calcDigit(12);
-        const digit2 = calcDigit(13);
+    const digit1 = calcDigit(10, 9);
+    const digit2 = calcDigit(11, 10);
 
-        return digit1 === parseInt(cnpj[12]) && digit2 === parseInt(cnpj[13]);
-    }
+    return digit1 === parseInt(cpf[9]) && digit2 === parseInt(cpf[10]);
+  }
 
-    get value(): string {
-        return this._value;
-    }
+  private isValidCNPJ(cnpj: string): boolean {
+    if (!/^\d{14}$/.test(cnpj) || /^(\d)\1{13}$/.test(cnpj)) return false;
 
-    get type(): CustomerDocumentType {
-        return this._type;
-    }
+    const calcDigit = (length: number) => {
+      let total = 0;
+      let factor = length - 7;
+      for (let i = length; i >= 1; i--) {
+        total += parseInt(cnpj[length - i]) * factor--;
+        if (factor < 2) factor = 9;
+      }
+      const remainder = total % 11;
+      return remainder < 2 ? 0 : 11 - remainder;
+    };
+
+    const digit1 = calcDigit(12);
+    const digit2 = calcDigit(13);
+
+    return digit1 === parseInt(cnpj[12]) && digit2 === parseInt(cnpj[13]);
+  }
+
+  get value(): string {
+    return this._value;
+  }
+
+  get type(): CustomerDocumentType {
+    return this._type;
+  }
 }

@@ -10,17 +10,24 @@ export class AuthController {
   constructor(
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   @Post('login')
   @ApiOperation({ summary: 'Fazer login como administrador' })
   async login(@Body() loginDto: LoginDto) {
-    const demoUsername = this.configService.get<string>('AUTH_DEMO_USERNAME', 'admin');
+    const demoUsername = this.configService.get<string>(
+      'AUTH_DEMO_USERNAME',
+      'admin',
+    );
     // Sem fallback: um AUTH_DEMO_PASSWORD ausente deve falhar alto, nao aceitar
     // silenciosamente uma senha fraca conhecida ("admin") como valida.
-    const demoPassword = this.configService.getOrThrow<string>('AUTH_DEMO_PASSWORD');
+    const demoPassword =
+      this.configService.getOrThrow<string>('AUTH_DEMO_PASSWORD');
 
-    if (loginDto.username === demoUsername && loginDto.password === demoPassword) {
+    if (
+      loginDto.username === demoUsername &&
+      loginDto.password === demoPassword
+    ) {
       const payload = { sub: 1, role: 'admin' };
       return {
         access_token: this.jwtService.sign(payload),

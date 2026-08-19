@@ -4,24 +4,24 @@ import { UpdateCustomerDto } from '../dto/update-customer.dto';
 
 @Injectable()
 export class UpdateCustomerUseCase {
-    constructor(
-        @Inject(CustomerRepository)
-        private readonly customerRepository: CustomerRepository,
-    ) { }
+  constructor(
+    @Inject(CustomerRepository)
+    private readonly customerRepository: CustomerRepository,
+  ) {}
 
-    async execute(id: string, input: UpdateCustomerDto): Promise<void> {
-        const customer = await this.customerRepository.findById(id);
+  async execute(id: string, input: UpdateCustomerDto): Promise<void> {
+    const customer = await this.customerRepository.findById(id);
 
-        if (!customer) {
-            throw new NotFoundException('Customer not found.');
-        }
-
-        customer.update({
-            name: input.name,
-            phone: input.phone,
-            email: input.email,
-        });
-
-        await this.customerRepository.update(customer);
+    if (!customer) {
+      throw new NotFoundException('Customer not found.');
     }
+
+    customer.update({
+      name: input.name,
+      phone: input.phone,
+      email: input.email,
+    });
+
+    await this.customerRepository.update(customer);
+  }
 }

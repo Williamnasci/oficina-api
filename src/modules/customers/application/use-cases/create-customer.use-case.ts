@@ -7,22 +7,22 @@ import { CreateCustomerDto } from '../dto/create-customer.dto';
 
 @Injectable()
 export class CreateCustomerUseCase {
-    constructor(
-        @Inject(CustomerRepository)
-        private readonly customerRepository: CustomerRepository,
-    ) { }
+  constructor(
+    @Inject(CustomerRepository)
+    private readonly customerRepository: CustomerRepository,
+  ) {}
 
-    async execute(input: CreateCustomerDto): Promise<{ id: string }> {
-        const customer = new Customer({
-            id: randomUUID(),
-            name: input.name,
-            document: new CustomerDocument(input.document, input.documentType),
-            phone: input.phone,
-            email: input.email,
-        });
+  async execute(input: CreateCustomerDto): Promise<{ id: string }> {
+    const customer = new Customer({
+      id: randomUUID(),
+      name: input.name,
+      document: new CustomerDocument(input.document, input.documentType),
+      phone: input.phone,
+      email: input.email,
+    });
 
-        await this.customerRepository.create(customer);
+    await this.customerRepository.create(customer);
 
-        return { id: customer.id };
-    }
+    return { id: customer.id };
+  }
 }

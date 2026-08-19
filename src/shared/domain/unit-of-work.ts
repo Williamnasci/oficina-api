@@ -11,7 +11,7 @@ export type TransactionContext = unknown;
 // TransactionContext opcional em seus metodos de escrita; quando omitido,
 // cada chamada e atomica isoladamente (comportamento anterior, preservado).
 export abstract class UnitOfWork {
-    abstract runInTransaction<T>(
-        work: (tx: TransactionContext) => Promise<T>,
-    ): Promise<T>;
+  abstract runInTransaction<T>(
+    work: (tx: TransactionContext) => Promise<T>,
+  ): Promise<T>;
 }

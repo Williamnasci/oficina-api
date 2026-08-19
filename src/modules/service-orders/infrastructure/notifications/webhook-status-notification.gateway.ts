@@ -38,7 +38,9 @@ export class WebhookStatusNotificationGateway extends StatusNotificationGateway 
       });
 
       if (!response.ok) {
-        this.metricsService.recordIntegrationError('status_notification_webhook');
+        this.metricsService.recordIntegrationError(
+          'status_notification_webhook',
+        );
         this.logger.warn(
           `Status notification returned HTTP ${response.status} for service order ${event.serviceOrderId}.`,
         );

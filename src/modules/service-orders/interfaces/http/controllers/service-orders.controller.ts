@@ -1,23 +1,23 @@
 import {
-    Body,
-    Controller,
-    Get,
-    HttpCode,
-    HttpStatus,
-    Param,
-    Patch,
-    Post,
-    Query,
-    UseGuards
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
 import {
-    ApiBody,
-    ApiOperation,
-    ApiParam,
-    ApiQuery,
-    ApiResponse,
-    ApiTags,
-    ApiBearerAuth
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { CreateServiceOrderDto } from '../../../application/dto/create-service-order.dto';
 import { RegisterDiagnosisDto } from '../../../application/dto/register-diagnosis.dto';
@@ -53,309 +53,354 @@ import { Roles } from '../../../../auth/roles.decorator';
 @ApiTags('service-orders')
 @Controller('service-orders')
 export class ServiceOrdersController {
-    constructor(
-        private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
-        private readonly getServiceOrderUseCase: GetServiceOrderUseCase,
-        private readonly registerDiagnosisUseCase: RegisterDiagnosisUseCase,
-        private readonly sendBudgetForApprovalUseCase: SendBudgetForApprovalUseCase,
-        private readonly startServiceOrderExecutionUseCase: StartServiceOrderExecutionUseCase,
-        private readonly finishServiceOrderUseCase: FinishServiceOrderUseCase,
-        private readonly deliverServiceOrderUseCase: DeliverServiceOrderUseCase,
-        private readonly addServiceToServiceOrderUseCase: AddServiceToServiceOrderUseCase,
-        private readonly addStockItemToServiceOrderUseCase: AddStockItemToServiceOrderUseCase,
-        private readonly approveBudgetUseCase: ApproveBudgetUseCase,
-        private readonly findServiceOrdersByDocumentUseCase: FindServiceOrdersByDocumentUseCase,
-        private readonly getAverageExecutionTimeUseCase: GetAverageExecutionTimeUseCase,
-        private readonly getServiceOrderStatusUseCase: GetServiceOrderStatusUseCase,
-        private readonly handleBudgetDecisionUseCase: HandleBudgetDecisionUseCase,
-        private readonly listOperationalServiceOrdersUseCase: ListOperationalServiceOrdersUseCase,
-        private readonly listServiceOrdersUseCase: ListServiceOrdersUseCase,
-        private readonly openServiceOrderUseCase: OpenServiceOrderUseCase,
-    ) { }
+  constructor(
+    private readonly createServiceOrderUseCase: CreateServiceOrderUseCase,
+    private readonly getServiceOrderUseCase: GetServiceOrderUseCase,
+    private readonly registerDiagnosisUseCase: RegisterDiagnosisUseCase,
+    private readonly sendBudgetForApprovalUseCase: SendBudgetForApprovalUseCase,
+    private readonly startServiceOrderExecutionUseCase: StartServiceOrderExecutionUseCase,
+    private readonly finishServiceOrderUseCase: FinishServiceOrderUseCase,
+    private readonly deliverServiceOrderUseCase: DeliverServiceOrderUseCase,
+    private readonly addServiceToServiceOrderUseCase: AddServiceToServiceOrderUseCase,
+    private readonly addStockItemToServiceOrderUseCase: AddStockItemToServiceOrderUseCase,
+    private readonly approveBudgetUseCase: ApproveBudgetUseCase,
+    private readonly findServiceOrdersByDocumentUseCase: FindServiceOrdersByDocumentUseCase,
+    private readonly getAverageExecutionTimeUseCase: GetAverageExecutionTimeUseCase,
+    private readonly getServiceOrderStatusUseCase: GetServiceOrderStatusUseCase,
+    private readonly handleBudgetDecisionUseCase: HandleBudgetDecisionUseCase,
+    private readonly listOperationalServiceOrdersUseCase: ListOperationalServiceOrdersUseCase,
+    private readonly listServiceOrdersUseCase: ListServiceOrdersUseCase,
+    private readonly openServiceOrderUseCase: OpenServiceOrderUseCase,
+  ) {}
 
-    @Post()
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.CREATED)
-    @ApiOperation({ summary: 'Criar ordem de serviço' })
-    @ApiBody({ type: CreateServiceOrderDto })
-    @ApiResponse({ status: 201, description: 'Service order created successfully.' })
-    async create(@Body() body: CreateServiceOrderDto): Promise<{ id: string }> {
-        return this.createServiceOrderUseCase.execute(body);
+  @Post()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Criar ordem de serviço' })
+  @ApiBody({ type: CreateServiceOrderDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Service order created successfully.',
+  })
+  async create(@Body() body: CreateServiceOrderDto): Promise<{ id: string }> {
+    return this.createServiceOrderUseCase.execute(body);
+  }
+
+  @Post('opening')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({
+    summary: 'Abrir ordem de servico com cliente, veiculo, servicos e pecas',
+  })
+  @ApiBody({ type: OpenServiceOrderDto })
+  @ApiResponse({
+    status: 201,
+    description: 'Service order opened successfully.',
+  })
+  async open(@Body() body: OpenServiceOrderDto): Promise<{ id: string }> {
+    return this.openServiceOrderUseCase.execute(body);
+  }
+
+  @Get()
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Buscar ordens de serviço por documento do cliente (CPF/CNPJ)',
+  })
+  @ApiQuery({
+    name: 'document',
+    required: false,
+    description: 'Customer CPF or CNPJ',
+    example: '52998224725',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Service orders retrieved successfully.',
+    type: [ServiceOrderResponseDto],
+  })
+  async findAll(
+    @Query('document') document?: string,
+  ): Promise<ServiceOrderResponseDto[] | ServiceOrderDetailsResponseDto[]> {
+    if (!document) {
+      return this.listServiceOrdersUseCase.execute();
     }
 
-    @Post('opening')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.CREATED)
-    @ApiOperation({ summary: 'Abrir ordem de servico com cliente, veiculo, servicos e pecas' })
-    @ApiBody({ type: OpenServiceOrderDto })
-    @ApiResponse({ status: 201, description: 'Service order opened successfully.' })
-    async open(@Body() body: OpenServiceOrderDto): Promise<{ id: string }> {
-        return this.openServiceOrderUseCase.execute(body);
-    }
+    return this.findServiceOrdersByDocumentUseCase.execute(document);
+  }
 
-    @Get()
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @ApiOperation({ summary: 'Buscar ordens de serviço por documento do cliente (CPF/CNPJ)' })
-    @ApiQuery({
-        name: 'document',
-        required: false,
-        description: 'Customer CPF or CNPJ',
-        example: '52998224725',
-    })
-    @ApiResponse({
-        status: 200,
-        description: 'Service orders retrieved successfully.',
-        type: [ServiceOrderResponseDto],
-    })
-    async findAll(
-        @Query('document') document?: string,
-    ): Promise<ServiceOrderResponseDto[] | ServiceOrderDetailsResponseDto[]> {
-        if (!document) {
-            return this.listServiceOrdersUseCase.execute();
-        }
+  @Get('operational-queue')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Listar ordens de servico operacionais por prioridade',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Operational service orders retrieved successfully.',
+    type: [ServiceOrderResponseDto],
+  })
+  async listOperationalQueue(): Promise<ServiceOrderResponseDto[]> {
+    return this.listOperationalServiceOrdersUseCase.execute();
+  }
 
-        return this.findServiceOrdersByDocumentUseCase.execute(document);
-    }
+  @Get('metrics/average-execution-time')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({
+    summary: 'Consultar tempo médio de execução das ordens de serviço',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Average execution time retrieved successfully.',
+    type: ServiceOrderMetricsResponseDto,
+  })
+  async getAverageExecutionTime(): Promise<ServiceOrderMetricsResponseDto> {
+    return this.getAverageExecutionTimeUseCase.execute();
+  }
 
-    @Get('operational-queue')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @ApiOperation({ summary: 'Listar ordens de servico operacionais por prioridade' })
-    @ApiResponse({
-        status: 200,
-        description: 'Operational service orders retrieved successfully.',
-        type: [ServiceOrderResponseDto],
-    })
-    async listOperationalQueue(): Promise<ServiceOrderResponseDto[]> {
-        return this.listOperationalServiceOrdersUseCase.execute();
-    }
+  @Get(':id')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiOperation({ summary: 'Buscar ordem de serviço por id com itens' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Service order retrieved successfully.',
+    type: ServiceOrderDetailsResponseDto,
+  })
+  async findById(
+    @Param('id') id: string,
+  ): Promise<ServiceOrderDetailsResponseDto> {
+    return this.getServiceOrderUseCase.execute(id);
+  }
 
-    @Get('metrics/average-execution-time')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @ApiOperation({ summary: 'Consultar tempo médio de execução das ordens de serviço' })
-    @ApiResponse({
-        status: 200,
-        description: 'Average execution time retrieved successfully.',
-        type: ServiceOrderMetricsResponseDto,
-    })
-    async getAverageExecutionTime(): Promise<ServiceOrderMetricsResponseDto> {
-        return this.getAverageExecutionTimeUseCase.execute();
-    }
+  @Get(':id/status')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  // Sem @Roles('admin') de proposito: e a consulta de status que o PDF
+  // descreve como acessivel ao cliente com o JWT emitido pela Lambda
+  // (login por CPF), nao so pelo admin do back-office.
+  @ApiOperation({ summary: 'Consultar status da ordem de servico' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Service order status retrieved successfully.',
+    type: ServiceOrderStatusResponseDto,
+  })
+  async getStatus(
+    @Param('id') id: string,
+  ): Promise<ServiceOrderStatusResponseDto> {
+    return this.getServiceOrderStatusUseCase.execute(id);
+  }
 
-    @Get(':id')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @ApiOperation({ summary: 'Buscar ordem de serviço por id com itens' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({
-        status: 200,
-        description: 'Service order retrieved successfully.',
-        type: ServiceOrderDetailsResponseDto,
-    })
-    async findById(@Param('id') id: string): Promise<ServiceOrderDetailsResponseDto> {
-        return this.getServiceOrderUseCase.execute(id);
-    }
+  @Patch(':id/diagnosis')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Registrar diagnóstico' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiBody({ type: RegisterDiagnosisDto })
+  @ApiResponse({
+    status: 204,
+    description: 'Diagnosis registered successfully.',
+  })
+  async registerDiagnosis(
+    @Param('id') id: string,
+    @Body() body: RegisterDiagnosisDto,
+  ): Promise<void> {
+    await this.registerDiagnosisUseCase.execute(id, body);
+  }
 
-    @Get(':id/status')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
-    // Sem @Roles('admin') de proposito: e a consulta de status que o PDF
-    // descreve como acessivel ao cliente com o JWT emitido pela Lambda
-    // (login por CPF), nao so pelo admin do back-office.
-    @ApiOperation({ summary: 'Consultar status da ordem de servico' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({
-        status: 200,
-        description: 'Service order status retrieved successfully.',
-        type: ServiceOrderStatusResponseDto,
-    })
-    async getStatus(@Param('id') id: string): Promise<ServiceOrderStatusResponseDto> {
-        return this.getServiceOrderStatusUseCase.execute(id);
-    }
+  @Post(':id/services')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Adicionar serviço' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiBody({ type: AddServiceToServiceOrderDto })
+  @ApiResponse({
+    status: 204,
+    description: 'Service added to service order successfully.',
+  })
+  async addService(
+    @Param('id') id: string,
+    @Body() body: AddServiceToServiceOrderDto,
+  ): Promise<void> {
+    await this.addServiceToServiceOrderUseCase.execute(id, body);
+  }
 
-    @Patch(':id/diagnosis')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Registrar diagnóstico' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiBody({ type: RegisterDiagnosisDto })
-    @ApiResponse({ status: 204, description: 'Diagnosis registered successfully.' })
-    async registerDiagnosis(@Param('id') id: string, @Body() body: RegisterDiagnosisDto): Promise<void> {
-        await this.registerDiagnosisUseCase.execute(id, body);
-    }
+  @Post(':id/stock-items')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Adicionar peça' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiBody({ type: AddStockItemToServiceOrderDto })
+  @ApiResponse({
+    status: 204,
+    description: 'Stock item added to service order successfully.',
+  })
+  async addStockItem(
+    @Param('id') id: string,
+    @Body() body: AddStockItemToServiceOrderDto,
+  ): Promise<void> {
+    await this.addStockItemToServiceOrderUseCase.execute(id, body);
+  }
 
-    @Post(':id/services')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Adicionar serviço' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiBody({ type: AddServiceToServiceOrderDto })
-    @ApiResponse({ status: 204, description: 'Service added to service order successfully.' })
-    async addService(
-        @Param('id') id: string,
-        @Body() body: AddServiceToServiceOrderDto,
-    ): Promise<void> {
-        await this.addServiceToServiceOrderUseCase.execute(id, body);
-    }
+  @Patch(':id/send-budget')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Enviar orçamento' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Budget sent for approval successfully.',
+  })
+  async sendBudget(@Param('id') id: string): Promise<void> {
+    await this.sendBudgetForApprovalUseCase.execute(id);
+  }
 
-    @Post(':id/stock-items')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Adicionar peça' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiBody({ type: AddStockItemToServiceOrderDto })
-    @ApiResponse({ status: 204, description: 'Stock item added to service order successfully.' })
-    async addStockItem(
-        @Param('id') id: string,
-        @Body() body: AddStockItemToServiceOrderDto,
-    ): Promise<void> {
-        await this.addStockItemToServiceOrderUseCase.execute(id, body);
-    }
+  @Patch(':id/approve-budget')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Aprovar orçamento' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({ status: 204, description: 'Budget approved successfully.' })
+  async approveBudget(@Param('id') id: string): Promise<void> {
+    await this.approveBudgetUseCase.execute(id);
+  }
 
-    @Patch(':id/send-budget')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Enviar orçamento' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({ status: 204, description: 'Budget sent for approval successfully.' })
-    async sendBudget(@Param('id') id: string): Promise<void> {
-        await this.sendBudgetForApprovalUseCase.execute(id);
-    }
+  @Post(':id/budget-decision')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Receber decisao externa de orcamento' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiBody({ type: BudgetDecisionDto })
+  @ApiResponse({
+    status: 204,
+    description: 'Budget decision processed successfully.',
+  })
+  async handleBudgetDecision(
+    @Param('id') id: string,
+    @Body() body: BudgetDecisionDto,
+  ): Promise<void> {
+    await this.handleBudgetDecisionUseCase.execute(id, body);
+  }
 
-    @Patch(':id/approve-budget')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Aprovar orçamento' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({ status: 204, description: 'Budget approved successfully.' })
-    async approveBudget(@Param('id') id: string): Promise<void> {
-        await this.approveBudgetUseCase.execute(id);
-    }
+  @Patch(':id/finish')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Finalizar serviço' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Service order finished successfully.',
+  })
+  async finish(@Param('id') id: string): Promise<void> {
+    await this.finishServiceOrderUseCase.execute(id);
+  }
 
-    @Post(':id/budget-decision')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Receber decisao externa de orcamento' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiBody({ type: BudgetDecisionDto })
-    @ApiResponse({ status: 204, description: 'Budget decision processed successfully.' })
-    async handleBudgetDecision(
-        @Param('id') id: string,
-        @Body() body: BudgetDecisionDto,
-    ): Promise<void> {
-        await this.handleBudgetDecisionUseCase.execute(id, body);
-    }
+  @Patch(':id/deliver')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Entregar veículo' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Service order delivered successfully.',
+  })
+  async deliver(@Param('id') id: string): Promise<void> {
+    await this.deliverServiceOrderUseCase.execute(id);
+  }
 
-    @Patch(':id/finish')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Finalizar serviço' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({ status: 204, description: 'Service order finished successfully.' })
-    async finish(@Param('id') id: string): Promise<void> {
-        await this.finishServiceOrderUseCase.execute(id);
-    }
-
-    @Patch(':id/deliver')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Entregar veículo' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({ status: 204, description: 'Service order delivered successfully.' })
-    async deliver(@Param('id') id: string): Promise<void> {
-        await this.deliverServiceOrderUseCase.execute(id);
-    }
-
-    @Patch(':id/start-execution')
-    @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
-    @HttpCode(HttpStatus.NO_CONTENT)
-    @ApiOperation({ summary: 'Iniciar execução da ordem de serviço' })
-    @ApiParam({
-        name: 'id',
-        required: true,
-        description: 'Service order id (UUID)',
-        example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
-    })
-    @ApiResponse({ status: 204, description: 'Service order execution started successfully.' })
-    async startExecution(@Param('id') id: string): Promise<void> {
-        await this.startServiceOrderExecutionUseCase.execute(id);
-    }
+  @Patch(':id/start-execution')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Iniciar execução da ordem de serviço' })
+  @ApiParam({
+    name: 'id',
+    required: true,
+    description: 'Service order id (UUID)',
+    example: 'e3b5c409-81d7-48df-8caf-627c467b8711',
+  })
+  @ApiResponse({
+    status: 204,
+    description: 'Service order execution started successfully.',
+  })
+  async startExecution(@Param('id') id: string): Promise<void> {
+    await this.startServiceOrderExecutionUseCase.execute(id);
+  }
 }

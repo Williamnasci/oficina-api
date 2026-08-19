@@ -12,7 +12,9 @@ export class AppController {
   }
 
   @Get('health')
-  async getHealth(@Res({ passthrough: true }) response?: Response): Promise<HealthStatus> {
+  async getHealth(
+    @Res({ passthrough: true }) response?: Response,
+  ): Promise<HealthStatus> {
     const health = await this.appService.getHealth();
 
     if (health.status !== 'ok') {

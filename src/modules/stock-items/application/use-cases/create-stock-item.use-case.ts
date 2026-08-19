@@ -6,24 +6,24 @@ import { StockItemRepository } from '../../domain/repositories/stock-item.reposi
 
 @Injectable()
 export class CreateStockItemUseCase {
-    constructor(
-        @Inject(StockItemRepository)
-        private readonly stockItemRepository: StockItemRepository,
-    ) { }
+  constructor(
+    @Inject(StockItemRepository)
+    private readonly stockItemRepository: StockItemRepository,
+  ) {}
 
-    async execute(input: CreateStockItemDto): Promise<{ id: string }> {
-        const stockItem = new StockItem({
-            id: randomUUID(),
-            name: input.name,
-            description: input.description ?? null,
-            sku: input.sku ?? null,
-            quantity: input.quantity ?? 0,
-            unitPrice: input.unitPrice,
-            isActive: input.isActive ?? true,
-        });
+  async execute(input: CreateStockItemDto): Promise<{ id: string }> {
+    const stockItem = new StockItem({
+      id: randomUUID(),
+      name: input.name,
+      description: input.description ?? null,
+      sku: input.sku ?? null,
+      quantity: input.quantity ?? 0,
+      unitPrice: input.unitPrice,
+      isActive: input.isActive ?? true,
+    });
 
-        await this.stockItemRepository.create(stockItem);
+    await this.stockItemRepository.create(stockItem);
 
-        return { id: stockItem.id };
-    }
+    return { id: stockItem.id };
+  }
 }

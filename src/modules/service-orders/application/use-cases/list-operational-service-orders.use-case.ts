@@ -5,14 +5,15 @@ import { ServiceOrderRepository } from '../../domain/repositories/service-order.
 
 @Injectable()
 export class ListOperationalServiceOrdersUseCase {
-    constructor(
-        @Inject(ServiceOrderRepository)
-        private readonly serviceOrderRepository: ServiceOrderRepository,
-    ) { }
+  constructor(
+    @Inject(ServiceOrderRepository)
+    private readonly serviceOrderRepository: ServiceOrderRepository,
+  ) {}
 
-    async execute(): Promise<ServiceOrderResponseDto[]> {
-        const serviceOrders = await this.serviceOrderRepository.findOperationalQueue();
+  async execute(): Promise<ServiceOrderResponseDto[]> {
+    const serviceOrders =
+      await this.serviceOrderRepository.findOperationalQueue();
 
-        return serviceOrders.map(ServiceOrderMapper.toResponseDto);
-    }
+    return serviceOrders.map(ServiceOrderMapper.toResponseDto);
+  }
 }
