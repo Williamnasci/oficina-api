@@ -13,6 +13,12 @@ type HttpErrorWithStatus = Error & {
   getStatus?: () => number;
 };
 
+// @types/express tipa Request.route como `any` - Omit+intersect (nao & puro,
+// que colapsaria pra `any` de novo) para sobrescrever com um tipo seguro.
+type RequestWithTypedRoute = Omit<Request, 'route'> & {
+  route?: { path?: string };
+};
+
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {
   constructor(private readonly metricsService: MetricsService) {}
@@ -23,7 +29,7 @@ export class MetricsInterceptor implements NestInterceptor {
     }
 
     const http = context.switchToHttp();
-    const request = http.getRequest<Request>();
+    const request = http.getRequest<RequestWithTypedRoute>();
     const response = http.getResponse<Response>();
     const start = process.hrtime.bigint();
     let statusCode = response.statusCode;
@@ -39,7 +45,7 @@ export class MetricsInterceptor implements NestInterceptor {
       finalize(() => {
         const durationSeconds =
           Number(process.hrtime.bigint() - start) / 1_000_000_000;
-        const route = request.route?.path ?? request.path ?? 'unknown';
+        const route = String(request.route?.path ?? request.path ?? 'unknown');
 
         this.metricsService.recordHttpRequest(
           request.method,

@@ -2,8 +2,13 @@ import { DomainException } from '../../../../shared/domain/errors/domain.excepti
 import { CustomerDocumentType } from '../enums/customer-document-type.enum';
 
 export class CustomerDocument {
-  private readonly _value: string;
-  private readonly _type: CustomerDocumentType;
+  // Nao-readonly (embora imutavel de fora, via getters): restore() abaixo
+  // reconstitui a instancia via Object.create + atribuicao direta, sem
+  // passar pelo constructor (evita revalidar CPF/CNPJ ja validado na
+  // criacao original) - readonly so permite atribuicao dentro do proprio
+  // constructor.
+  private _value: string;
+  private _type: CustomerDocumentType;
 
   constructor(value: string, type: CustomerDocumentType) {
     const normalizedValue = value.replace(/\D/g, '');
@@ -31,7 +36,9 @@ export class CustomerDocument {
    * Data from the database was already validated at creation time.
    */
   static restore(value: string, type: CustomerDocumentType): CustomerDocument {
-    const instance = Object.create(CustomerDocument.prototype);
+    const instance = Object.create(
+      CustomerDocument.prototype,
+    ) as CustomerDocument;
     instance._value = value;
     instance._type = type;
     return instance;

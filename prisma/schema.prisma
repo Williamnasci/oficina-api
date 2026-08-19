@@ -90,6 +90,13 @@ model ServiceOrderService {
   service        ServiceCatalog @relation(fields: [serviceId], references: [id])
   serviceOrder   ServiceOrder   @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
 
+  // Mesmo motivo da constraint equivalente em ServiceOrderStockItem: sem
+  // isso, duas requisicoes concorrentes adicionando o mesmo servico numa
+  // mesma OS podiam cada uma ver "nao existe ainda" (findFirst nao e
+  // atomico) e criar duas linhas, ou uma sobrescrever a quantidade lida
+  // pela outra. O repository usa upsert() para resolver isso via ON
+  // CONFLICT no banco.
+  @@unique([serviceOrderId, serviceId])
   @@index([serviceOrderId])
   @@index([serviceId])
 }

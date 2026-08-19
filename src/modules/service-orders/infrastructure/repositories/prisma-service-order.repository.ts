@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { DomainException } from '../../../../shared/domain/errors/domain.exception';
 import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.service';
 import { ServiceOrder } from '../../domain/entities/service-order.entity';
 import { ServiceOrderStatus } from '../../domain/enums/service-order-status.enum';
@@ -139,30 +140,66 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     return Math.round(totalMinutes / finishedOrders.length);
   }
 
-  async update(order: ServiceOrder): Promise<void> {
-    try {
-      await this.prisma.serviceOrder.update({
-        where: { id: order.id },
-        data: {
-          status: order.status,
-          diagnosis: order.diagnosis,
-          servicesAmount: order.servicesAmount,
-          stockItemsAmount: order.stockItemsAmount,
-          totalAmount: order.totalAmount,
-          startedAt: order.startedAt,
-          finishedAt: order.finishedAt,
-          deliveredAt: order.deliveredAt,
-          updatedAt: order.updatedAt,
-        },
-      });
-    } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-        if (error.code === 'P2025') {
-          throw new NotFoundException('Service order not found.');
+  async update(
+    order: ServiceOrder,
+    expectedStatus?: ServiceOrderStatus,
+  ): Promise<void> {
+    const data = {
+      status: order.status,
+      diagnosis: order.diagnosis,
+      servicesAmount: order.servicesAmount,
+      stockItemsAmount: order.stockItemsAmount,
+      totalAmount: order.totalAmount,
+      startedAt: order.startedAt,
+      finishedAt: order.finishedAt,
+      deliveredAt: order.deliveredAt,
+      updatedAt: order.updatedAt,
+    };
+
+    if (expectedStatus === undefined) {
+      try {
+        await this.prisma.serviceOrder.update({
+          where: { id: order.id },
+          data,
+        });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === 'P2025') {
+            throw new NotFoundException('Service order not found.');
+          }
         }
+
+        throw error;
       }
 
-      throw error;
+      return;
+    }
+
+    // Atualizacao condicional: so aplica se o status persistido ainda for
+    // o mesmo lido antes da transicao em memoria ser aplicada na
+    // entidade - checagem e escrita na MESMA instrucao SQL, sem janela
+    // entre ler o estado e escrever nele. Sem isso, duas transicoes
+    // concorrentes (ex.: aprovar e recusar quase simultaneamente) podiam
+    // ambas validar contra o mesmo status antigo e a ultima escrita
+    // vencer silenciosamente, mesmo apos a outra ja ter sido persistida.
+    const updated = await this.prisma.serviceOrder.updateMany({
+      where: { id: order.id, status: expectedStatus },
+      data,
+    });
+
+    if (updated.count === 0) {
+      const stillExists = await this.prisma.serviceOrder.findUnique({
+        where: { id: order.id },
+        select: { id: true },
+      });
+
+      if (!stillExists) {
+        throw new NotFoundException('Service order not found.');
+      }
+
+      throw new ConflictException(
+        'Service order status changed concurrently - reload and try again.',
+      );
     }
   }
 
@@ -220,58 +257,52 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       throw new NotFoundException('Service not found.');
     }
 
-    const existingItem = await tx.serviceOrderService.findFirst({
+    const unitPrice = Number(service.price);
+    const deltaAmount = unitPrice * quantity;
+
+    // Incremento atomico (SET col = col + delta no banco), condicionado ao
+    // estado na MESMA instrucao SQL - nao ha janela entre checar se a OS
+    // ainda aceita alteracao de itens e escrever nela. Substitui o padrao
+    // antigo (ler todos os itens, somar em memoria, escrever um valor
+    // absoluto), que sob concorrencia deixava servicesAmount refletir so
+    // uma das duas inclusoes concorrentes (lost update).
+    const updated = await tx.serviceOrder.updateMany({
       where: {
-        serviceOrderId,
-        serviceId,
+        id: serviceOrderId,
+        status: { in: ServiceOrder.ITEM_MODIFIABLE_STATUSES },
+      },
+      data: {
+        servicesAmount: { increment: deltaAmount },
+        totalAmount: { increment: deltaAmount },
+        updatedAt: new Date(),
       },
     });
 
-    const unitPrice = Number(service.price);
-
-    if (existingItem) {
-      const newQuantity = existingItem.quantity + quantity;
-      const newTotalPrice = unitPrice * newQuantity;
-
-      await tx.serviceOrderService.update({
-        where: { id: existingItem.id },
-        data: {
-          quantity: newQuantity,
-          unitPrice,
-          totalPrice: newTotalPrice,
-        },
-      });
-    } else {
-      await tx.serviceOrderService.create({
-        data: {
-          serviceOrderId,
-          serviceId,
-          quantity,
-          unitPrice,
-          totalPrice: unitPrice * quantity,
-        },
-      });
+    if (updated.count === 0) {
+      throw new DomainException(
+        'Services can only be added while the order is received or in diagnosis.',
+      );
     }
 
-    const serviceItems = await tx.serviceOrderService.findMany({
-      where: { serviceOrderId },
-    });
-
-    const servicesAmount = serviceItems.reduce(
-      (sum, item) => sum + Number(item.totalPrice),
-      0,
-    );
-
-    // Use domain entity for recalculation
-    const domainOrder = this.toDomain(order);
-    domainOrder.updateServicesAmount(servicesAmount);
-
-    await tx.serviceOrder.update({
-      where: { id: serviceOrderId },
-      data: {
-        servicesAmount: domainOrder.servicesAmount,
-        totalAmount: domainOrder.totalAmount,
-        updatedAt: domainOrder.updatedAt,
+    // upsert (nao findFirst + create/update): a constraint
+    // unique(serviceOrderId, serviceId) faz o Postgres resolver a corrida
+    // via ON CONFLICT, e quantity/totalPrice sao incrementados de forma
+    // atomica - mesmo padrao ja usado para peca de estoque, abaixo.
+    await tx.serviceOrderService.upsert({
+      where: {
+        serviceOrderId_serviceId: { serviceOrderId, serviceId },
+      },
+      create: {
+        serviceOrderId,
+        serviceId,
+        quantity,
+        unitPrice,
+        totalPrice: deltaAmount,
+      },
+      update: {
+        quantity: { increment: quantity },
+        unitPrice,
+        totalPrice: { increment: deltaAmount },
       },
     });
   }
@@ -379,6 +410,32 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       throw new NotFoundException('Stock item not found.');
     }
 
+    const unitPrice = Number(stockItem.unitPrice);
+    const deltaAmount = unitPrice * quantity;
+
+    // Incremento atomico condicionado ao estado, na MESMA instrucao SQL -
+    // mesma logica e mesmo motivo de addServiceToOrderWithClient (fecha o
+    // achado de item incluido fora do estado permitido e a corrida no
+    // calculo do agregado). Feito ANTES do decremento de estoque: se a OS
+    // nao aceitar mais itens, nem chega a tocar no estoque.
+    const orderUpdated = await tx.serviceOrder.updateMany({
+      where: {
+        id: serviceOrderId,
+        status: { in: ServiceOrder.ITEM_MODIFIABLE_STATUSES },
+      },
+      data: {
+        stockItemsAmount: { increment: deltaAmount },
+        totalAmount: { increment: deltaAmount },
+        updatedAt: new Date(),
+      },
+    });
+
+    if (orderUpdated.count === 0) {
+      throw new DomainException(
+        'Stock items can only be added while the order is received or in diagnosis.',
+      );
+    }
+
     // Decremento condicional atomico: a checagem de quantidade e a
     // escrita acontecem na MESMA instrucao SQL (UPDATE ... WHERE
     // quantity >= X), com lock de linha do Postgres. O findUnique
@@ -395,8 +452,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       throw new ConflictException('Insufficient stock quantity.');
     }
 
-    const unitPrice = Number(stockItem.unitPrice);
-
     // upsert (nao findFirst + create/update) porque a constraint
     // unique(serviceOrderId, stockItemId) faz o Postgres resolver a
     // corrida via ON CONFLICT - duas requisicoes concorrentes
@@ -410,34 +465,12 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
         stockItemId,
         quantity,
         unitPrice,
-        totalPrice: unitPrice * quantity,
+        totalPrice: deltaAmount,
       },
       update: {
         quantity: { increment: quantity },
         unitPrice,
-        totalPrice: { increment: unitPrice * quantity },
-      },
-    });
-
-    const stockItems = await tx.serviceOrderStockItem.findMany({
-      where: { serviceOrderId },
-    });
-
-    const stockItemsAmount = stockItems.reduce(
-      (sum, item) => sum + Number(item.totalPrice),
-      0,
-    );
-
-    // Use domain entity for recalculation
-    const domainOrder = this.toDomain(order);
-    domainOrder.updateStockItemsAmount(stockItemsAmount);
-
-    await tx.serviceOrder.update({
-      where: { id: serviceOrderId },
-      data: {
-        stockItemsAmount: domainOrder.stockItemsAmount,
-        totalAmount: domainOrder.totalAmount,
-        updatedAt: domainOrder.updatedAt,
+        totalPrice: { increment: deltaAmount },
       },
     });
   }

@@ -18,6 +18,18 @@ export type ServiceOrderProps = {
 };
 
 export class ServiceOrder {
+  // Servicos e pecas compoem o orcamento - uma vez que a OS sai de
+  // RECEIVED/IN_DIAGNOSIS (orcamento enviado, aprovado, em execucao,
+  // finalizado ou entregue), os itens deixam de ser uma lista aberta.
+  // Alterar depois disso mudaria silenciosamente um valor que o cliente
+  // ja avaliou/aprovou, ou baixaria estoque contra uma OS ja concluida.
+  // Definido aqui (dominio) e referenciado pela infraestrutura, para a
+  // regra de negocio nao ficar duplicada/podendo divergir entre camadas.
+  public static readonly ITEM_MODIFIABLE_STATUSES: ServiceOrderStatus[] = [
+    ServiceOrderStatus.RECEIVED,
+    ServiceOrderStatus.IN_DIAGNOSIS,
+  ];
+
   public readonly id: string;
   public readonly customerId: string;
   public readonly vehicleId: string;

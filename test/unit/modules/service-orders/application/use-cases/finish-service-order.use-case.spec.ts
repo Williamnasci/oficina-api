@@ -31,7 +31,10 @@ describe('FinishServiceOrderUseCase', () => {
     await useCase.execute('order-1');
     expect(repository.findById).toHaveBeenCalledWith('order-1');
     expect(mockServiceOrder.finish).toHaveBeenCalled();
-    expect(repository.update).toHaveBeenCalledWith(mockServiceOrder);
+    expect(repository.update).toHaveBeenCalledWith(
+      mockServiceOrder,
+      ServiceOrderStatus.IN_PROGRESS,
+    );
     expect(notificationGateway.notifyStatusChanged).toHaveBeenCalledWith(
       expect.objectContaining({
         serviceOrderId: 'order-1',

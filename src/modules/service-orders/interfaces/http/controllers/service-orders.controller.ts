@@ -8,8 +8,11 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
+import { AuthenticatedUser } from '../../../../auth/jwt.strategy';
 import {
   ApiBody,
   ApiOperation,
@@ -207,8 +210,12 @@ export class ServiceOrdersController {
   })
   async getStatus(
     @Param('id') id: string,
+    @Req() request: Request,
   ): Promise<ServiceOrderStatusResponseDto> {
-    return this.getServiceOrderStatusUseCase.execute(id);
+    return this.getServiceOrderStatusUseCase.execute(
+      id,
+      request.user as AuthenticatedUser,
+    );
   }
 
   @Patch(':id/diagnosis')

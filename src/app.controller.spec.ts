@@ -42,6 +42,7 @@ describe('AppController', () => {
         status: 'ok',
         app: 'ok',
         database: 'ok',
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment -- expect.any() is typed `any` by @types/jest, not a real unsafe value
         timestamp: expect.any(String),
       });
     });
