@@ -1,7 +1,12 @@
 # RFC-0001: Escolha da nuvem
 
-**Status:** Aceita
+**Status:** Aceita (parcialmente superada)
 **Data:** 2026-08-03
+
+> **Superada em 2026-08-19 pelo [ADR-0007](../adr/0007-migracao-aws-academy.md):**
+> a conta passou de pessoal Free Tier para AWS Academy Learner Lab, região
+> `us-east-1` (era `us-east-2`). Este documento fica preservado como registro
+> histórico da decisão original — não reflete a conta em uso atualmente.
 
 ## Resumo
 

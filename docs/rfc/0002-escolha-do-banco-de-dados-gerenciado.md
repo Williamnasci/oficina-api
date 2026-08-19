@@ -3,6 +3,12 @@
 **Status:** Aceita
 **Data:** 2026-08-03
 
+> **Nota (2026-08-19):** a decisão de motor/instância (RDS PostgreSQL,
+> `db.t3.micro`) continua válida e em uso. O que mudou foi a conta AWS — ver
+> [ADR-0007](../adr/0007-migracao-aws-academy.md) — então as referências a
+> "Free Tier" abaixo descrevem o modelo de custo da conta pessoal original,
+> não o orçamento fixo de USD 50 da conta AWS Academy atual.
+
 ## Resumo
 
 Adotar **Amazon RDS para PostgreSQL**, instância `db.t3.micro` (Free Tier), single-AZ, como banco de dados gerenciado, migrando o schema Prisma já existente sem trocar de motor.

@@ -8,7 +8,7 @@ graph TB
         C[Cliente / Frontend]
     end
 
-    subgraph AWS["AWS (conta pessoal Free Tier, us-east-2)"]
+    subgraph AWS["AWS (AWS Academy Learner Lab, us-east-1 - ver ADR-0007)"]
         subgraph GW["API Gateway (HTTP API v2)"]
             R1["POST /auth/login (pública)"]
             R2["GET /health (pública)"]

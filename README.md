@@ -17,9 +17,9 @@ Decisões arquiteturais completas (RFCs, ADRs, diagramas) ficam em [`docs/`](doc
 
 ### Ambiente publicado
 
-- **API Gateway (entrada pública)**: `https://amveu1p6l4.execute-api.us-east-2.amazonaws.com` — `POST /auth/login` (público, emite JWT via `oficina-lambda-auth`), `GET /health` (público), `ANY /{proxy+}` (protegido pelo Lambda Authorizer, encaminha para a aplicação).
+- **API Gateway (entrada pública)**: `https://lux3dot3qh.execute-api.us-east-1.amazonaws.com` — `POST /auth/login` (público, emite JWT via `oficina-lambda-auth`), `GET /health` (público), `ANY /{proxy+}` (protegido pelo Lambda Authorizer, encaminha para a aplicação).
 - **Dashboard Datadog**: [Oficina API - Visão Geral](https://us5.datadoghq.com/dashboard/k2b-3e2-bz4/oficina-api---visao-geral) — volume de OS, tempo médio por status, erros de integração, latência, healthcheck.
-- **Custo**: a EC2 do cluster (`oficina-infra-k8s`) é destruída entre sessões de trabalho para não gerar gasto contínuo numa conta pessoal Free Tier — se o endpoint acima não responder, é porque a instância está desligada no momento; `terraform apply` em `oficina-infra-k8s` recria tudo automaticamente.
+- **Conta AWS**: sandbox do AWS Academy Learner Lab (ver [ADR-0007](docs/adr/0007-migracao-aws-academy.md)), não uma conta pessoal — orçamento fixo de USD 50 para todo o curso, sessão de lab expira em ~4h, e a própria plataforma frequentemente para/reinicia a EC2 do cluster (`oficina-infra-k8s`) entre sessões, o que muda o IP público (sem Elastic IP, decisão consciente de custo). Se o endpoint acima não responder, é porque a sessão do lab não está ativa no momento — não é um recurso sempre-ligado.
 
 ## Descrição do Projeto
 

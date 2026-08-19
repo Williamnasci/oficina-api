@@ -144,12 +144,20 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     order: ServiceOrder,
     expectedStatus?: ServiceOrderStatus,
   ): Promise<void> {
+    // Deliberadamente SEM servicesAmount/stockItemsAmount/totalAmount: essa
+    // escrita usa o snapshot em memoria carregado no inicio do caso de uso
+    // (antes da transicao de dominio ser aplicada). Se uma inclusao de
+    // servico/peca incrementar esses campos atomicamente enquanto uma
+    // transicao de status estiver em voo, escrever os valores antigos aqui
+    // apagaria silenciosamente esse incremento (achado ALT-N01). Nenhum dos
+    // 7 metodos de transicao de dominio (registerDiagnosis,
+    // sendBudgetForApproval, approveBudget, rejectBudget, startExecution,
+    // finish, deliver) toca nesses campos - so addServiceToOrder/
+    // addStockItemToOrder tem essa responsabilidade, via incremento
+    // atomico proprio. update() nao deve reescrever campos que nao possui.
     const data = {
       status: order.status,
       diagnosis: order.diagnosis,
-      servicesAmount: order.servicesAmount,
-      stockItemsAmount: order.stockItemsAmount,
-      totalAmount: order.totalAmount,
       startedAt: order.startedAt,
       finishedAt: order.finishedAt,
       deliveredAt: order.deliveredAt,
