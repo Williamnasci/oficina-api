@@ -1,0 +1,106 @@
+{
+  "title": "Oficina API - Visao Geral",
+  "description": "Dashboard da Fase 3 (Tech Challenge): volume de OS, tempo medio por status, erros de integracao, latencia e saude da API.",
+  "layout_type": "ordered",
+  "widgets": [
+    {
+      "definition": {
+        "title": "Volume de OS abertas (por dia)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:service_orders_created.count{*}.as_count()",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Tempo medio ate atingir cada status (segundos)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1 / query2" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:service_order_time_to_status_seconds.sum{*} by {status}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:service_order_time_to_status_seconds.count{*} by {status}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Erros de integracao (webhook de notificacao)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:integration_errors.count{*} by {target}.as_count()",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Latencia media das requisicoes HTTP (segundos)",
+        "type": "timeseries",
+        "requests": [
+          {
+            "formulas": [{ "formula": "query1 / query2" }],
+            "queries": [
+              {
+                "data_source": "metrics",
+                "name": "query1",
+                "query": "avg:request_duration_seconds.sum{*} by {route}"
+              },
+              {
+                "data_source": "metrics",
+                "name": "query2",
+                "query": "avg:request_duration_seconds.count{*} by {route}"
+              }
+            ],
+            "response_format": "timeseries",
+            "display_type": "line"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Requisicoes HTTP por status code",
+        "type": "timeseries",
+        "requests": [
+          {
+            "q": "sum:requests.count{*} by {status_code}.as_count()",
+            "display_type": "bars"
+          }
+        ]
+      }
+    },
+    {
+      "definition": {
+        "title": "Healthcheck (1 = saudavel, 0 = erro)",
+        "type": "query_value",
+        "precision": 0,
+        "requests": [
+          {
+            "q": "min:healthcheck_status{*} by {component}",
+            "aggregator": "last"
+          }
+        ]
+      }
+    }
+  ]
+}
