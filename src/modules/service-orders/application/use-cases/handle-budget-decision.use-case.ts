@@ -29,13 +29,15 @@ export class HandleBudgetDecisionUseCase {
       throw new NotFoundException('Service order not found.');
     }
 
+    const previousStatus = serviceOrder.status;
+
     if (input.decision === BudgetDecision.APPROVED) {
       serviceOrder.approveBudget();
     } else {
       serviceOrder.rejectBudget();
     }
 
-    await this.serviceOrderRepository.update(serviceOrder);
+    await this.serviceOrderRepository.update(serviceOrder, previousStatus);
     await this.statusNotificationGateway?.notifyStatusChanged({
       serviceOrderId,
       status: serviceOrder.status,

@@ -1,5 +1,6 @@
 import { DeliverServiceOrderUseCase } from '../../../../../../src/modules/service-orders/application/use-cases/deliver-service-order.use-case';
 import { ServiceOrderRepository } from '../../../../../../src/modules/service-orders/domain/repositories/service-order.repository';
+import { ServiceOrderStatus } from '../../../../../../src/modules/service-orders/domain/enums/service-order-status.enum';
 
 describe('DeliverServiceOrderUseCase', () => {
   let useCase: DeliverServiceOrderUseCase;
@@ -8,6 +9,7 @@ describe('DeliverServiceOrderUseCase', () => {
 
   beforeEach(() => {
     mockServiceOrder = {
+      status: ServiceOrderStatus.FINISHED,
       deliver: jest.fn(),
     };
     repository = {
@@ -21,6 +23,9 @@ describe('DeliverServiceOrderUseCase', () => {
     await useCase.execute('order-1');
     expect(repository.findById).toHaveBeenCalledWith('order-1');
     expect(mockServiceOrder.deliver).toHaveBeenCalled();
-    expect(repository.update).toHaveBeenCalledWith(mockServiceOrder);
+    expect(repository.update).toHaveBeenCalledWith(
+      mockServiceOrder,
+      ServiceOrderStatus.FINISHED,
+    );
   });
 });

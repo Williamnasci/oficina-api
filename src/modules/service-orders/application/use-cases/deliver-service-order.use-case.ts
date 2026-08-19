@@ -25,9 +25,10 @@ export class DeliverServiceOrderUseCase {
       throw new NotFoundException('Service order not found.');
     }
 
+    const previousStatus = serviceOrder.status;
     serviceOrder.deliver();
 
-    await this.serviceOrderRepository.update(serviceOrder);
+    await this.serviceOrderRepository.update(serviceOrder, previousStatus);
     await this.statusNotificationGateway?.notifyStatusChanged({
       serviceOrderId,
       status: serviceOrder.status,

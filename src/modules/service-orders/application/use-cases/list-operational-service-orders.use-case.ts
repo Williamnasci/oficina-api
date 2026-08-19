@@ -14,6 +14,8 @@ export class ListOperationalServiceOrdersUseCase {
     const serviceOrders =
       await this.serviceOrderRepository.findOperationalQueue();
 
-    return serviceOrders.map(ServiceOrderMapper.toResponseDto);
+    return serviceOrders.map((order) =>
+      ServiceOrderMapper.toResponseDto(order),
+    );
   }
 }

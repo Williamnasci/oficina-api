@@ -13,6 +13,8 @@ export class ListServiceOrdersUseCase {
   async execute(): Promise<ServiceOrderResponseDto[]> {
     const serviceOrders = await this.serviceOrderRepository.findAll();
 
-    return serviceOrders.map(ServiceOrderMapper.toResponseDto);
+    return serviceOrders.map((order) =>
+      ServiceOrderMapper.toResponseDto(order),
+    );
   }
 }

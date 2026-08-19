@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
+import { AuthenticatedUser } from './jwt.strategy';
 
 // Roda depois do JwtAuthGuard (que ja populou request.user a partir do
 // payload do JWT). Sem @Roles() no endpoint, deixa passar - o guard so
@@ -24,7 +25,9 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    const { user } = context
+      .switchToHttp()
+      .getRequest<{ user?: AuthenticatedUser }>();
 
     if (!user?.role || !requiredRoles.includes(user.role)) {
       throw new ForbiddenException(

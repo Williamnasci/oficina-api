@@ -1,5 +1,6 @@
 import { RegisterDiagnosisUseCase } from '../../../../../../src/modules/service-orders/application/use-cases/register-diagnosis.use-case';
 import { ServiceOrderRepository } from '../../../../../../src/modules/service-orders/domain/repositories/service-order.repository';
+import { ServiceOrderStatus } from '../../../../../../src/modules/service-orders/domain/enums/service-order-status.enum';
 
 describe('RegisterDiagnosisUseCase', () => {
   let useCase: RegisterDiagnosisUseCase;
@@ -8,6 +9,7 @@ describe('RegisterDiagnosisUseCase', () => {
 
   beforeEach(() => {
     mockServiceOrder = {
+      status: ServiceOrderStatus.RECEIVED,
       registerDiagnosis: jest.fn(),
     };
     repository = {
@@ -23,6 +25,9 @@ describe('RegisterDiagnosisUseCase', () => {
     expect(mockServiceOrder.registerDiagnosis).toHaveBeenCalledWith(
       'engine broken',
     );
-    expect(repository.update).toHaveBeenCalledWith(mockServiceOrder);
+    expect(repository.update).toHaveBeenCalledWith(
+      mockServiceOrder,
+      ServiceOrderStatus.RECEIVED,
+    );
   });
 });
