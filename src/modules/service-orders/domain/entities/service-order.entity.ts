@@ -53,6 +53,16 @@ export class ServiceOrder {
             throw new DomainException('Diagnosis is required.');
         }
 
+        // Sem essa checagem, uma OS ja FINISHED/DELIVERED podia voltar para
+        // IN_DIAGNOSIS a qualquer momento - este metodo nao validava o
+        // estado atual, so o conteudo do diagnostico.
+        if (
+            this.status !== ServiceOrderStatus.RECEIVED &&
+            this.status !== ServiceOrderStatus.IN_DIAGNOSIS
+        ) {
+            throw new DomainException('Diagnosis can only be registered while the order is received or in diagnosis.');
+        }
+
         this.diagnosis = diagnosis.trim();
         this.status = ServiceOrderStatus.IN_DIAGNOSIS;
         this.touch();
@@ -61,6 +71,14 @@ export class ServiceOrder {
     public sendBudgetForApproval(): void {
         if (!this.diagnosis) {
             throw new DomainException('Diagnosis must be registered before sending budget.');
+        }
+
+        // `diagnosis` permanece preenchido para sempre depois do primeiro
+        // registro - checar so isso permitia reenviar orcamento (voltando
+        // para WAITING_APPROVAL) de qualquer estado posterior, inclusive
+        // FINISHED/DELIVERED.
+        if (this.status !== ServiceOrderStatus.IN_DIAGNOSIS) {
+            throw new DomainException('Only service orders in diagnosis can have a budget sent for approval.');
         }
 
         this.status = ServiceOrderStatus.WAITING_APPROVAL;

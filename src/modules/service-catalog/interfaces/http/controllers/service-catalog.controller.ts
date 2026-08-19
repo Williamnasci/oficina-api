@@ -27,10 +27,13 @@ import { ListServiceCatalogUseCase } from '../../../application/use-cases/list-s
 import { UpdateServiceCatalogUseCase } from '../../../application/use-cases/update-service-catalog.use-case';
 import { DeleteServiceCatalogUseCase } from '../../../application/use-cases/delete-service-catalog.use-case';
 import { JwtAuthGuard } from '../../../../auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../auth/roles.guard';
+import { Roles } from '../../../../auth/roles.decorator';
 
 @ApiTags('service-catalog')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('service-catalog')
 export class ServiceCatalogController {
     constructor(

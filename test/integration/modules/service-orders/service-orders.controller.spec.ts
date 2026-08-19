@@ -20,6 +20,7 @@ import { ListOperationalServiceOrdersUseCase } from '../../../../src/modules/ser
 import { ListServiceOrdersUseCase } from '../../../../src/modules/service-orders/application/use-cases/list-service-orders.use-case';
 import { OpenServiceOrderUseCase } from '../../../../src/modules/service-orders/application/use-cases/open-service-order.use-case';
 import { JwtAuthGuard } from '../../../../src/modules/auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../src/modules/auth/roles.guard';
 
 describe('ServiceOrdersController (integration)', () => {
     let app: INestApplication;
@@ -146,6 +147,8 @@ describe('ServiceOrdersController (integration)', () => {
             ],
         })
         .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard)
         .useValue({ canActivate: () => true })
         .compile();
 

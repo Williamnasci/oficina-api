@@ -175,6 +175,53 @@ describe('ServiceOrders transactional budget and stock flow (real integration)',
         expect(Number(persistedOrder.totalAmount)).toBe(0);
     });
 
+    it('should not oversell stock when two requests race for the same item concurrently', async () => {
+        const stockBefore = await prisma.stockItem.findUniqueOrThrow({
+            where: { id: ids.stockItem },
+        });
+
+        // Duas OS pedindo mais da metade do estoque cada uma - juntas
+        // excedem o disponivel, mas nenhuma sozinha excede. Um read-check-
+        // write nao atomico deixaria as duas passarem (overselling); o
+        // decremento condicional (WHERE quantity >= X) so deixa uma.
+        const requestedEach = Math.ceil(stockBefore.quantity / 2) + 1;
+
+        const [orderAId, orderBId] = await Promise.all(
+            [0, 1].map(async () => {
+                const response = await request(app.getHttpServer())
+                    .post('/service-orders')
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .send({ customerId: ids.customer, vehicleId: ids.vehicle })
+                    .expect(201);
+
+                return response.body.id as string;
+            }),
+        );
+        createdOrderIds.push(orderAId, orderBId);
+
+        const results = await Promise.all(
+            [orderAId, orderBId].map((orderId) =>
+                request(app.getHttpServer())
+                    .post(`/service-orders/${orderId}/stock-items`)
+                    .set('Authorization', `Bearer ${accessToken}`)
+                    .send({ stockItemId: ids.stockItem, quantity: requestedEach }),
+            ),
+        );
+
+        const succeeded = results.filter((r) => r.status === 204);
+        const rejected = results.filter((r) => r.status === 409);
+
+        expect(succeeded).toHaveLength(1);
+        expect(rejected).toHaveLength(1);
+
+        const stockAfter = await prisma.stockItem.findUniqueOrThrow({
+            where: { id: ids.stockItem },
+        });
+
+        expect(stockAfter.quantity).toBe(stockBefore.quantity - requestedEach);
+        expect(stockAfter.quantity).toBeGreaterThanOrEqual(0);
+    });
+
     async function seedBaseData(): Promise<void> {
         await prisma.customer.create({
             data: {

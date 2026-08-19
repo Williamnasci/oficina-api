@@ -27,10 +27,13 @@ import { ListVehiclesUseCase } from '../../../application/use-cases/list-vehicle
 import { UpdateVehicleUseCase } from '../../../application/use-cases/update-vehicle.use-case';
 import { DeleteVehicleUseCase } from '../../../application/use-cases/delete-vehicle.use-case';
 import { JwtAuthGuard } from '../../../../auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../auth/roles.guard';
+import { Roles } from '../../../../auth/roles.decorator';
 
 @ApiTags('vehicles')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('vehicles')
 export class VehiclesController {
     constructor(

@@ -27,10 +27,13 @@ import { GetStockItemUseCase } from '../../../application/use-cases/get-stock-it
 import { ListStockItemsUseCase } from '../../../application/use-cases/list-stock-items.use-case';
 import { UpdateStockItemUseCase } from '../../../application/use-cases/update-stock-item.use-case';
 import { JwtAuthGuard } from '../../../../auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../auth/roles.guard';
+import { Roles } from '../../../../auth/roles.decorator';
 
 @ApiTags('stock-items')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('stock-items')
 export class StockItemsController {
     constructor(
