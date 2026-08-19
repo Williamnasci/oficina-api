@@ -30,10 +30,13 @@ import { FindCustomerByDocumentUseCase } from '../../../application/use-cases/fi
 import { UpdateCustomerUseCase } from '../../../application/use-cases/update-customer.use-case';
 import { DeleteCustomerUseCase } from '../../../application/use-cases/delete-customer.use-case';
 import { JwtAuthGuard } from '../../../../auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../auth/roles.guard';
+import { Roles } from '../../../../auth/roles.decorator';
 
 @ApiTags('customers')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin')
 @Controller('customers')
 export class CustomersController {
     constructor(

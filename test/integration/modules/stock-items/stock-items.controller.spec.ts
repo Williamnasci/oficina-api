@@ -8,6 +8,7 @@ import { ListStockItemsUseCase } from '../../../../src/modules/stock-items/appli
 import { UpdateStockItemUseCase } from '../../../../src/modules/stock-items/application/use-cases/update-stock-item.use-case';
 import { DeleteStockItemUseCase } from '../../../../src/modules/stock-items/application/use-cases/delete-stock-item.use-case';
 import { JwtAuthGuard } from '../../../../src/modules/auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../src/modules/auth/roles.guard';
 
 describe('StockItemsController (integration)', () => {
     let app: INestApplication;
@@ -51,6 +52,8 @@ describe('StockItemsController (integration)', () => {
             ],
         })
         .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard)
         .useValue({ canActivate: () => true })
         .compile();
 

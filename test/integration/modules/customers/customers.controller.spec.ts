@@ -9,6 +9,7 @@ import { FindCustomerByDocumentUseCase } from '../../../../src/modules/customers
 import { UpdateCustomerUseCase } from '../../../../src/modules/customers/application/use-cases/update-customer.use-case';
 import { DeleteCustomerUseCase } from '../../../../src/modules/customers/application/use-cases/delete-customer.use-case';
 import { JwtAuthGuard } from '../../../../src/modules/auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../src/modules/auth/roles.guard';
 
 describe('CustomersController (integration)', () => {
     let app: INestApplication;
@@ -38,6 +39,8 @@ describe('CustomersController (integration)', () => {
             ],
         })
         .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard)
         .useValue({ canActivate: () => true })
         .compile();
 

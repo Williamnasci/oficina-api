@@ -308,48 +308,43 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
                 throw new NotFoundException('Stock item not found.');
             }
 
-            if (stockItem.quantity < quantity) {
+            // Decremento condicional atomico: a checagem de quantidade e a
+            // escrita acontecem na MESMA instrucao SQL (UPDATE ... WHERE
+            // quantity >= X), com lock de linha do Postgres. O findUnique
+            // acima e so pra dar um erro 404 cedo com uma mensagem melhor -
+            // ele NAO e a fonte de verdade da checagem de disponibilidade
+            // (duas transacoes concorrentes podiam ler o mesmo valor antes
+            // de qualquer uma escrever, permitindo overselling).
+            const decremented = await tx.stockItem.updateMany({
+                where: { id: stockItemId, quantity: { gte: quantity } },
+                data: { quantity: { decrement: quantity }, updatedAt: new Date() },
+            });
+
+            if (decremented.count === 0) {
                 throw new ConflictException('Insufficient stock quantity.');
             }
 
-            const existingItem = await tx.serviceOrderStockItem.findFirst({
-                where: {
-                    serviceOrderId,
-                    stockItemId,
-                },
-            });
-
             const unitPrice = Number(stockItem.unitPrice);
 
-            if (existingItem) {
-                const newQuantity = existingItem.quantity + quantity;
-                const newTotalPrice = unitPrice * newQuantity;
-
-                await tx.serviceOrderStockItem.update({
-                    where: { id: existingItem.id },
-                    data: {
-                        quantity: newQuantity,
-                        unitPrice,
-                        totalPrice: newTotalPrice,
-                    },
-                });
-            } else {
-                await tx.serviceOrderStockItem.create({
-                    data: {
-                        serviceOrderId,
-                        stockItemId,
-                        quantity,
-                        unitPrice,
-                        totalPrice: unitPrice * quantity,
-                    },
-                });
-            }
-
-            await tx.stockItem.update({
-                where: { id: stockItemId },
-                data: {
-                    quantity: stockItem.quantity - quantity,
-                    updatedAt: new Date(),
+            // upsert (nao findFirst + create/update) porque a constraint
+            // unique(serviceOrderId, stockItemId) faz o Postgres resolver a
+            // corrida via ON CONFLICT - duas requisicoes concorrentes
+            // adicionando o mesmo item nao criam mais duas linhas.
+            await tx.serviceOrderStockItem.upsert({
+                where: {
+                    serviceOrderId_stockItemId: { serviceOrderId, stockItemId },
+                },
+                create: {
+                    serviceOrderId,
+                    stockItemId,
+                    quantity,
+                    unitPrice,
+                    totalPrice: unitPrice * quantity,
+                },
+                update: {
+                    quantity: { increment: quantity },
+                    unitPrice,
+                    totalPrice: { increment: unitPrice * quantity },
                 },
             });
 

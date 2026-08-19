@@ -47,6 +47,8 @@ import { ServiceOrderMetricsResponseDto } from '../../../application/dto/service
 import { ServiceOrderResponseDto } from '../../../application/dto/service-order-response.dto';
 import { ServiceOrderStatusResponseDto } from '../../../application/dto/service-order-status-response.dto';
 import { JwtAuthGuard } from '../../../../auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../auth/roles.guard';
+import { Roles } from '../../../../auth/roles.decorator';
 
 @ApiTags('service-orders')
 @Controller('service-orders')
@@ -73,7 +75,8 @@ export class ServiceOrdersController {
 
     @Post()
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Criar ordem de serviço' })
     @ApiBody({ type: CreateServiceOrderDto })
@@ -84,7 +87,8 @@ export class ServiceOrdersController {
 
     @Post('opening')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.CREATED)
     @ApiOperation({ summary: 'Abrir ordem de servico com cliente, veiculo, servicos e pecas' })
     @ApiBody({ type: OpenServiceOrderDto })
@@ -95,7 +99,8 @@ export class ServiceOrdersController {
 
     @Get()
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @ApiOperation({ summary: 'Buscar ordens de serviço por documento do cliente (CPF/CNPJ)' })
     @ApiQuery({
         name: 'document',
@@ -120,7 +125,8 @@ export class ServiceOrdersController {
 
     @Get('operational-queue')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @ApiOperation({ summary: 'Listar ordens de servico operacionais por prioridade' })
     @ApiResponse({
         status: 200,
@@ -133,7 +139,8 @@ export class ServiceOrdersController {
 
     @Get('metrics/average-execution-time')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @ApiOperation({ summary: 'Consultar tempo médio de execução das ordens de serviço' })
     @ApiResponse({
         status: 200,
@@ -146,7 +153,8 @@ export class ServiceOrdersController {
 
     @Get(':id')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @ApiOperation({ summary: 'Buscar ordem de serviço por id com itens' })
     @ApiParam({
         name: 'id',
@@ -166,6 +174,9 @@ export class ServiceOrdersController {
     @Get(':id/status')
     @ApiBearerAuth()
     @UseGuards(JwtAuthGuard)
+    // Sem @Roles('admin') de proposito: e a consulta de status que o PDF
+    // descreve como acessivel ao cliente com o JWT emitido pela Lambda
+    // (login por CPF), nao so pelo admin do back-office.
     @ApiOperation({ summary: 'Consultar status da ordem de servico' })
     @ApiParam({
         name: 'id',
@@ -184,7 +195,8 @@ export class ServiceOrdersController {
 
     @Patch(':id/diagnosis')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Registrar diagnóstico' })
     @ApiParam({
@@ -201,7 +213,8 @@ export class ServiceOrdersController {
 
     @Post(':id/services')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Adicionar serviço' })
     @ApiParam({
@@ -221,7 +234,8 @@ export class ServiceOrdersController {
 
     @Post(':id/stock-items')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Adicionar peça' })
     @ApiParam({
@@ -241,7 +255,8 @@ export class ServiceOrdersController {
 
     @Patch(':id/send-budget')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Enviar orçamento' })
     @ApiParam({
@@ -257,7 +272,8 @@ export class ServiceOrdersController {
 
     @Patch(':id/approve-budget')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Aprovar orçamento' })
     @ApiParam({
@@ -273,7 +289,8 @@ export class ServiceOrdersController {
 
     @Post(':id/budget-decision')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Receber decisao externa de orcamento' })
     @ApiParam({
@@ -293,7 +310,8 @@ export class ServiceOrdersController {
 
     @Patch(':id/finish')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Finalizar serviço' })
     @ApiParam({
@@ -309,7 +327,8 @@ export class ServiceOrdersController {
 
     @Patch(':id/deliver')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Entregar veículo' })
     @ApiParam({
@@ -325,7 +344,8 @@ export class ServiceOrdersController {
 
     @Patch(':id/start-execution')
     @ApiBearerAuth()
-    @UseGuards(JwtAuthGuard)
+    @UseGuards(JwtAuthGuard, RolesGuard)
+    @Roles('admin')
     @HttpCode(HttpStatus.NO_CONTENT)
     @ApiOperation({ summary: 'Iniciar execução da ordem de serviço' })
     @ApiParam({

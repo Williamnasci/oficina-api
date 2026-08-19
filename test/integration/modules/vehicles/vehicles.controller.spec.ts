@@ -8,6 +8,7 @@ import { ListVehiclesUseCase } from '../../../../src/modules/vehicles/applicatio
 import { UpdateVehicleUseCase } from '../../../../src/modules/vehicles/application/use-cases/update-vehicle.use-case';
 import { DeleteVehicleUseCase } from '../../../../src/modules/vehicles/application/use-cases/delete-vehicle.use-case';
 import { JwtAuthGuard } from '../../../../src/modules/auth/jwt-auth.guard';
+import { RolesGuard } from '../../../../src/modules/auth/roles.guard';
 
 describe('VehiclesController (integration)', () => {
     let app: INestApplication;
@@ -36,6 +37,8 @@ describe('VehiclesController (integration)', () => {
             ],
         })
         .overrideGuard(JwtAuthGuard)
+        .useValue({ canActivate: () => true })
+        .overrideGuard(RolesGuard)
         .useValue({ canActivate: () => true })
         .compile();
 

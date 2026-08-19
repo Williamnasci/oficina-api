@@ -55,11 +55,31 @@ describe('ServiceOrder Entity - Extended', () => {
         const order = new ServiceOrder({
             id: '1', customerId: 'c-1', vehicleId: 'v-1',
             diagnosis: 'Trocar pastilhas',
+            status: ServiceOrderStatus.IN_DIAGNOSIS,
         });
 
         order.sendBudgetForApproval();
 
         expect(order.status).toBe(ServiceOrderStatus.WAITING_APPROVAL);
+    });
+
+    it('should throw when sending budget from a status other than in diagnosis', () => {
+        const order = new ServiceOrder({
+            id: '1', customerId: 'c-1', vehicleId: 'v-1',
+            diagnosis: 'Trocar pastilhas',
+            status: ServiceOrderStatus.DELIVERED,
+        });
+
+        expect(() => order.sendBudgetForApproval()).toThrow(DomainException);
+    });
+
+    it('should throw when registering diagnosis on a finished or delivered order', () => {
+        const order = new ServiceOrder({
+            id: '1', customerId: 'c-1', vehicleId: 'v-1',
+            status: ServiceOrderStatus.DELIVERED,
+        });
+
+        expect(() => order.registerDiagnosis('Novo diagnostico')).toThrow(DomainException);
     });
 
     it('should throw when sending budget without diagnosis', () => {
