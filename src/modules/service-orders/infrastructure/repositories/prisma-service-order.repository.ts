@@ -9,14 +9,17 @@ import { ServiceOrder } from '../../domain/entities/service-order.entity';
 import { ServiceOrderStatus } from '../../domain/enums/service-order-status.enum';
 import { ServiceOrderRepository } from '../../domain/repositories/service-order.repository';
 import { ServiceOrderDetailsReadModel } from '../../domain/repositories/service-order-details.read-model';
+import { TransactionContext } from '../../../../shared/domain/unit-of-work';
 
 @Injectable()
 export class PrismaServiceOrderRepository implements ServiceOrderRepository {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) {}
 
-    async create(order: ServiceOrder): Promise<void> {
+    async create(order: ServiceOrder, tx?: TransactionContext): Promise<void> {
+        const client = (tx as Prisma.TransactionClient | undefined) ?? this.prisma;
+
         try {
-            await this.prisma.serviceOrder.create({
+            await client.serviceOrder.create({
                 data: {
                     id: order.id,
                     customerId: order.customerId,
@@ -163,82 +166,119 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
         }
     }
 
-    async addServiceToOrder(serviceOrderId: string, serviceId: string, quantity: number): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
-            const order = await tx.serviceOrder.findUnique({
-                where: { id: serviceOrderId },
+    async addServiceToOrder(
+        serviceOrderId: string,
+        serviceId: string,
+        quantity: number,
+        tx?: TransactionContext,
+    ): Promise<void> {
+        // Prisma nao suporta $transaction aninhada (chamar $transaction de
+        // dentro de outra nao "adere" a transacao externa, abre uma nova) -
+        // se um tx externo foi passado (chamador ja esta dentro de um
+        // UnitOfWork.runInTransaction), participamos dele diretamente em vez
+        // de abrir uma transacao propria; senao, comportamento original
+        // (atomica por chamada).
+        if (tx) {
+            await this.addServiceToOrderWithClient(
+                tx as Prisma.TransactionClient,
+                serviceOrderId,
+                serviceId,
+                quantity,
+            );
+            return;
+        }
+
+        await this.prisma.$transaction((client) =>
+            this.addServiceToOrderWithClient(
+                client,
+                serviceOrderId,
+                serviceId,
+                quantity,
+            ),
+        );
+    }
+
+    private async addServiceToOrderWithClient(
+        tx: Prisma.TransactionClient,
+        serviceOrderId: string,
+        serviceId: string,
+        quantity: number,
+    ): Promise<void> {
+        const order = await tx.serviceOrder.findUnique({
+            where: { id: serviceOrderId },
+        });
+
+        if (!order) {
+            throw new NotFoundException('Service order not found.');
+        }
+
+        const service = await tx.serviceCatalog.findUnique({
+            where: { id: serviceId },
+        });
+
+        if (!service || !service.isActive) {
+            throw new NotFoundException('Service not found.');
+        }
+
+        const existingItem = await tx.serviceOrderService.findFirst({
+            where: {
+                serviceOrderId,
+                serviceId,
+            },
+        });
+
+        const unitPrice = Number(service.price);
+
+        if (existingItem) {
+            const newQuantity = existingItem.quantity + quantity;
+            const newTotalPrice = unitPrice * newQuantity;
+
+            await tx.serviceOrderService.update({
+                where: { id: existingItem.id },
+                data: {
+                    quantity: newQuantity,
+                    unitPrice,
+                    totalPrice: newTotalPrice,
+                },
             });
-
-            if (!order) {
-                throw new NotFoundException('Service order not found.');
-            }
-
-            const service = await tx.serviceCatalog.findUnique({
-                where: { id: serviceId },
-            });
-
-            if (!service || !service.isActive) {
-                throw new NotFoundException('Service not found.');
-            }
-
-            const existingItem = await tx.serviceOrderService.findFirst({
-                where: {
+        } else {
+            await tx.serviceOrderService.create({
+                data: {
                     serviceOrderId,
                     serviceId,
+                    quantity,
+                    unitPrice,
+                    totalPrice: unitPrice * quantity,
                 },
             });
+        }
 
-            const unitPrice = Number(service.price);
+        const serviceItems = await tx.serviceOrderService.findMany({
+            where: { serviceOrderId },
+        });
 
-            if (existingItem) {
-                const newQuantity = existingItem.quantity + quantity;
-                const newTotalPrice = unitPrice * newQuantity;
+        const servicesAmount = serviceItems.reduce(
+            (sum, item) => sum + Number(item.totalPrice),
+            0,
+        );
 
-                await tx.serviceOrderService.update({
-                    where: { id: existingItem.id },
-                    data: {
-                        quantity: newQuantity,
-                        unitPrice,
-                        totalPrice: newTotalPrice,
-                    },
-                });
-            } else {
-                await tx.serviceOrderService.create({
-                    data: {
-                        serviceOrderId,
-                        serviceId,
-                        quantity,
-                        unitPrice,
-                        totalPrice: unitPrice * quantity,
-                    },
-                });
-            }
+        // Use domain entity for recalculation
+        const domainOrder = this.toDomain(order);
+        domainOrder.updateServicesAmount(servicesAmount);
 
-            const serviceItems = await tx.serviceOrderService.findMany({
-                where: { serviceOrderId },
-            });
-
-            const servicesAmount = serviceItems.reduce(
-                (sum, item) => sum + Number(item.totalPrice),
-                0,
-            );
-
-            // Use domain entity for recalculation
-            const domainOrder = this.toDomain(order);
-            domainOrder.updateServicesAmount(servicesAmount);
-
-            await tx.serviceOrder.update({
-                where: { id: serviceOrderId },
-                data: {
-                    servicesAmount: domainOrder.servicesAmount,
-                    totalAmount: domainOrder.totalAmount,
-                    updatedAt: domainOrder.updatedAt,
-                },
-            });
+        await tx.serviceOrder.update({
+            where: { id: serviceOrderId },
+            data: {
+                servicesAmount: domainOrder.servicesAmount,
+                totalAmount: domainOrder.totalAmount,
+                updatedAt: domainOrder.updatedAt,
+            },
         });
     }
 
-    async findDetailsById(id: string): Promise<ServiceOrderDetailsReadModel | null> {
+    async findDetailsById(
+        id: string,
+    ): Promise<ServiceOrderDetailsReadModel | null> {
         const data = await this.prisma.serviceOrder.findUnique({
             where: { id },
             include: {
@@ -290,85 +330,115 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
         };
     }
 
-    async addStockItemToOrder(serviceOrderId: string, stockItemId: string, quantity: number): Promise<void> {
-        await this.prisma.$transaction(async (tx) => {
-            const order = await tx.serviceOrder.findUnique({
-                where: { id: serviceOrderId },
-            });
-
-            if (!order) {
-                throw new NotFoundException('Service order not found.');
-            }
-
-            const stockItem = await tx.stockItem.findUnique({
-                where: { id: stockItemId },
-            });
-
-            if (!stockItem || !stockItem.isActive) {
-                throw new NotFoundException('Stock item not found.');
-            }
-
-            // Decremento condicional atomico: a checagem de quantidade e a
-            // escrita acontecem na MESMA instrucao SQL (UPDATE ... WHERE
-            // quantity >= X), com lock de linha do Postgres. O findUnique
-            // acima e so pra dar um erro 404 cedo com uma mensagem melhor -
-            // ele NAO e a fonte de verdade da checagem de disponibilidade
-            // (duas transacoes concorrentes podiam ler o mesmo valor antes
-            // de qualquer uma escrever, permitindo overselling).
-            const decremented = await tx.stockItem.updateMany({
-                where: { id: stockItemId, quantity: { gte: quantity } },
-                data: { quantity: { decrement: quantity }, updatedAt: new Date() },
-            });
-
-            if (decremented.count === 0) {
-                throw new ConflictException('Insufficient stock quantity.');
-            }
-
-            const unitPrice = Number(stockItem.unitPrice);
-
-            // upsert (nao findFirst + create/update) porque a constraint
-            // unique(serviceOrderId, stockItemId) faz o Postgres resolver a
-            // corrida via ON CONFLICT - duas requisicoes concorrentes
-            // adicionando o mesmo item nao criam mais duas linhas.
-            await tx.serviceOrderStockItem.upsert({
-                where: {
-                    serviceOrderId_stockItemId: { serviceOrderId, stockItemId },
-                },
-                create: {
-                    serviceOrderId,
-                    stockItemId,
-                    quantity,
-                    unitPrice,
-                    totalPrice: unitPrice * quantity,
-                },
-                update: {
-                    quantity: { increment: quantity },
-                    unitPrice,
-                    totalPrice: { increment: unitPrice * quantity },
-                },
-            });
-
-            const stockItems = await tx.serviceOrderStockItem.findMany({
-                where: { serviceOrderId },
-            });
-
-            const stockItemsAmount = stockItems.reduce(
-                (sum, item) => sum + Number(item.totalPrice),
-                0,
+    async addStockItemToOrder(
+        serviceOrderId: string,
+        stockItemId: string,
+        quantity: number,
+        tx?: TransactionContext,
+    ): Promise<void> {
+        // Ver comentario em addServiceToOrder sobre $transaction nao aninhar.
+        if (tx) {
+            await this.addStockItemToOrderWithClient(
+                tx as Prisma.TransactionClient,
+                serviceOrderId,
+                stockItemId,
+                quantity,
             );
+            return;
+        }
 
-            // Use domain entity for recalculation
-            const domainOrder = this.toDomain(order);
-            domainOrder.updateStockItemsAmount(stockItemsAmount);
+        await this.prisma.$transaction((client) =>
+            this.addStockItemToOrderWithClient(
+                client,
+                serviceOrderId,
+                stockItemId,
+                quantity,
+            ),
+        );
+    }
 
-            await tx.serviceOrder.update({
-                where: { id: serviceOrderId },
-                data: {
-                    stockItemsAmount: domainOrder.stockItemsAmount,
-                    totalAmount: domainOrder.totalAmount,
-                    updatedAt: domainOrder.updatedAt,
-                },
-            });
+    private async addStockItemToOrderWithClient(
+        tx: Prisma.TransactionClient,
+        serviceOrderId: string,
+        stockItemId: string,
+        quantity: number,
+    ): Promise<void> {
+        const order = await tx.serviceOrder.findUnique({
+            where: { id: serviceOrderId },
+        });
+
+        if (!order) {
+            throw new NotFoundException('Service order not found.');
+        }
+
+        const stockItem = await tx.stockItem.findUnique({
+            where: { id: stockItemId },
+        });
+
+        if (!stockItem || !stockItem.isActive) {
+            throw new NotFoundException('Stock item not found.');
+        }
+
+        // Decremento condicional atomico: a checagem de quantidade e a
+        // escrita acontecem na MESMA instrucao SQL (UPDATE ... WHERE
+        // quantity >= X), com lock de linha do Postgres. O findUnique
+        // acima e so pra dar um erro 404 cedo com uma mensagem melhor -
+        // ele NAO e a fonte de verdade da checagem de disponibilidade
+        // (duas transacoes concorrentes podiam ler o mesmo valor antes
+        // de qualquer uma escrever, permitindo overselling).
+        const decremented = await tx.stockItem.updateMany({
+            where: { id: stockItemId, quantity: { gte: quantity } },
+            data: { quantity: { decrement: quantity }, updatedAt: new Date() },
+        });
+
+        if (decremented.count === 0) {
+            throw new ConflictException('Insufficient stock quantity.');
+        }
+
+        const unitPrice = Number(stockItem.unitPrice);
+
+        // upsert (nao findFirst + create/update) porque a constraint
+        // unique(serviceOrderId, stockItemId) faz o Postgres resolver a
+        // corrida via ON CONFLICT - duas requisicoes concorrentes
+        // adicionando o mesmo item nao criam mais duas linhas.
+        await tx.serviceOrderStockItem.upsert({
+            where: {
+                serviceOrderId_stockItemId: { serviceOrderId, stockItemId },
+            },
+            create: {
+                serviceOrderId,
+                stockItemId,
+                quantity,
+                unitPrice,
+                totalPrice: unitPrice * quantity,
+            },
+            update: {
+                quantity: { increment: quantity },
+                unitPrice,
+                totalPrice: { increment: unitPrice * quantity },
+            },
+        });
+
+        const stockItems = await tx.serviceOrderStockItem.findMany({
+            where: { serviceOrderId },
+        });
+
+        const stockItemsAmount = stockItems.reduce(
+            (sum, item) => sum + Number(item.totalPrice),
+            0,
+        );
+
+        // Use domain entity for recalculation
+        const domainOrder = this.toDomain(order);
+        domainOrder.updateStockItemsAmount(stockItemsAmount);
+
+        await tx.serviceOrder.update({
+            where: { id: serviceOrderId },
+            data: {
+                stockItemsAmount: domainOrder.stockItemsAmount,
+                totalAmount: domainOrder.totalAmount,
+                updatedAt: domainOrder.updatedAt,
+            },
         });
     }
 

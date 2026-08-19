@@ -9,14 +9,17 @@ import { CustomerRepository } from '../../domain/repositories/customer.repositor
 import { CustomerDocument } from '../../domain/value-objects/customer-document.value-object';
 import { CustomerDocumentType } from '../../domain/enums/customer-document-type.enum';
 import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.service';
+import { TransactionContext } from '../../../../shared/domain/unit-of-work';
 
 @Injectable()
 export class PrismaCustomerRepository implements CustomerRepository {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) {}
 
-    async create(customer: Customer): Promise<void> {
+    async create(customer: Customer, tx?: TransactionContext): Promise<void> {
+        const client = (tx as Prisma.TransactionClient | undefined) ?? this.prisma;
+
         try {
-            await this.prisma.customer.create({
+            await client.customer.create({
                 data: {
                     id: customer.id,
                     name: customer.name,

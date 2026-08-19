@@ -8,14 +8,17 @@ import { PrismaService } from '../../../../shared/infrastructure/prisma/prisma.s
 import { Vehicle } from '../../domain/entities/vehicle.entity';
 import { VehicleRepository } from '../../domain/repositories/vehicle.repository';
 import { LicensePlate } from '../../domain/value-objects/license-plate.value-object';
+import { TransactionContext } from '../../../../shared/domain/unit-of-work';
 
 @Injectable()
 export class PrismaVehicleRepository implements VehicleRepository {
-    constructor(private readonly prisma: PrismaService) { }
+    constructor(private readonly prisma: PrismaService) {}
 
-    async create(vehicle: Vehicle): Promise<void> {
+    async create(vehicle: Vehicle, tx?: TransactionContext): Promise<void> {
+        const client = (tx as Prisma.TransactionClient | undefined) ?? this.prisma;
+
         try {
-            await this.prisma.vehicle.create({
+            await client.vehicle.create({
                 data: {
                     id: vehicle.id,
                     customerId: vehicle.customerId,
@@ -51,7 +54,9 @@ export class PrismaVehicleRepository implements VehicleRepository {
     }
 
     async findByLicensePlate(licensePlate: string): Promise<Vehicle | null> {
-        const normalizedPlate = licensePlate.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+        const normalizedPlate = licensePlate
+            .replace(/[^a-zA-Z0-9]/g, '')
+            .toUpperCase();
 
         const data = await this.prisma.vehicle.findUnique({
             where: { licensePlate: normalizedPlate },
