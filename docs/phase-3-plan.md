@@ -6,6 +6,13 @@ Evoluir a aplicação da oficina mecânica (concluída na Fase 2) para um nível
 
 Este documento registra as decisões tomadas antes da implementação e o roteiro de trabalho. Ele antecede a implementação, ao contrário de `phase-2-plan.md`, que documenta um trabalho já concluído.
 
+> **Nota (2026-08-19):** a conta AWS usada mudou de pessoal Free Tier para **AWS
+> Academy Learner Lab** (região `us-east-1`, era `us-east-2`) — ver
+> [ADR-0007](adr/0007-migracao-aws-academy.md). O "ADR-1" logo abaixo (e as
+> referências a "Free Tier"/`us-east-2` no restante deste plano) descrevem a
+> decisão original, mantida como registro histórico do planejamento — não a
+> conta em uso atualmente.
+
 ## Ponto de partida (estado real do repositório hoje)
 
 - Aplicação NestJS + Prisma + PostgreSQL, Clean Architecture em camadas, rodando em Docker/Docker Compose, Kubernetes (cluster Kind local) e Terraform, com CI/CD em GitHub Actions — tudo entregue na Fase 2.
