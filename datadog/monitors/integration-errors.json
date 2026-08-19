@@ -1,0 +1,12 @@
+{
+  "name": "[oficina-api] Erros de integracao acima do normal",
+  "type": "metric alert",
+  "query": "sum(last_15m):sum:integration_errors.count{*}.as_count() > 5",
+  "message": "Mais de 5 erros de integracao (webhook de notificacao de status) nos ultimos 15 minutos. Verificar STATUS_NOTIFICATION_WEBHOOK_URL e a disponibilidade do endpoint externo.",
+  "tags": ["service:oficina-api", "env:production"],
+  "options": {
+    "thresholds": { "critical": 5 },
+    "notify_no_data": false,
+    "renotify_interval": 0
+  }
+}

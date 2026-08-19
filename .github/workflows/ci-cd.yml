@@ -299,7 +299,13 @@ jobs:
           set -euo pipefail
 
           if [ -z "${DATADOG_API_KEY:-}" ]; then
-              echo "DATADOG_API_KEY não configurado; pulando deploy do Datadog Agent."
+              # ::warning:: em vez de so um echo - fica visivel no resumo do
+              # run no GitHub Actions, nao so escondido no log do step. Ja
+              # aconteceu do secret existir mas com valor vazio (paste
+              # interativo do gh secret set falhando silenciosamente) e o
+              # deploy "passar" sem ninguem notar que a observabilidade
+              # ficou fora do ar.
+              echo "::warning::DATADOG_API_KEY nao configurado (ou vazio) - pulando deploy do Datadog Agent. A aplicacao vai subir sem APM/logs/metricas no Datadog."
               exit 0
           fi
 

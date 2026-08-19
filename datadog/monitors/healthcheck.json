@@ -1,0 +1,12 @@
+{
+  "name": "[oficina-api] Healthcheck falhando",
+  "type": "metric alert",
+  "query": "min(last_5m):min:healthcheck_status{*} by {component} < 1",
+  "message": "O healthcheck da oficina-api reportou falha (component: {{component.name}}) nos ultimos 5 minutos. Verificar conectividade com o banco (RDS) e o pod no cluster Kind.",
+  "tags": ["service:oficina-api", "env:production"],
+  "options": {
+    "thresholds": { "critical": 1 },
+    "notify_no_data": false,
+    "renotify_interval": 0
+  }
+}
