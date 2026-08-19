@@ -9,18 +9,18 @@ import { StockItemsController } from './interfaces/http/controllers/stock-items.
 import { DeleteStockItemUseCase } from './application/use-cases/delete-stock-item.use-case';
 
 @Module({
-    controllers: [StockItemsController],
-    providers: [
-        CreateStockItemUseCase,
-        GetStockItemUseCase,
-        ListStockItemsUseCase,
-        UpdateStockItemUseCase,
-        DeleteStockItemUseCase,
-        {
-            provide: StockItemRepository,
-            useClass: PrismaStockItemRepository,
-        },
-    ],
-    exports: [StockItemRepository],
+  controllers: [StockItemsController],
+  providers: [
+    CreateStockItemUseCase,
+    GetStockItemUseCase,
+    ListStockItemsUseCase,
+    UpdateStockItemUseCase,
+    DeleteStockItemUseCase,
+    {
+      provide: StockItemRepository,
+      useClass: PrismaStockItemRepository,
+    },
+  ],
+  exports: [StockItemRepository],
 })
-export class StockItemsModule { }
+export class StockItemsModule {}

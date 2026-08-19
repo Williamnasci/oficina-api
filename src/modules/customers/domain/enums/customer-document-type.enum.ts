@@ -1,4 +1,4 @@
 export enum CustomerDocumentType {
-    CPF = 'CPF',
-    CNPJ = 'CNPJ',
+  CPF = 'CPF',
+  CNPJ = 'CNPJ',
 }

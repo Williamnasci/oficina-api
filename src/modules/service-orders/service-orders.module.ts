@@ -27,36 +27,36 @@ import { WebhookStatusNotificationGateway } from './infrastructure/notifications
 import { MetricsStatusNotificationGateway } from './infrastructure/notifications/metrics-status-notification.gateway';
 
 @Module({
-    imports: [CustomersModule, VehiclesModule, ObservabilityModule],
-    controllers: [ServiceOrdersController],
-    providers: [
-        AddServiceToServiceOrderUseCase,
-        CreateServiceOrderUseCase,
-        GetServiceOrderUseCase,
-        RegisterDiagnosisUseCase,
-        SendBudgetForApprovalUseCase,
-        StartServiceOrderExecutionUseCase,
-        FinishServiceOrderUseCase,
-        DeliverServiceOrderUseCase,
-        AddStockItemToServiceOrderUseCase,
-        ApproveBudgetUseCase,
-        FindServiceOrdersByDocumentUseCase,
-        GetAverageExecutionTimeUseCase,
-        GetServiceOrderStatusUseCase,
-        HandleBudgetDecisionUseCase,
-        ListOperationalServiceOrdersUseCase,
-        ListServiceOrdersUseCase,
-        OpenServiceOrderUseCase,
-        {
-            provide: ServiceOrderRepository,
-            useClass: PrismaServiceOrderRepository,
-        },
-        WebhookStatusNotificationGateway,
-        {
-            provide: StatusNotificationGateway,
-            useClass: MetricsStatusNotificationGateway,
-        },
-    ],
-    exports: [ServiceOrderRepository],
+  imports: [CustomersModule, VehiclesModule, ObservabilityModule],
+  controllers: [ServiceOrdersController],
+  providers: [
+    AddServiceToServiceOrderUseCase,
+    CreateServiceOrderUseCase,
+    GetServiceOrderUseCase,
+    RegisterDiagnosisUseCase,
+    SendBudgetForApprovalUseCase,
+    StartServiceOrderExecutionUseCase,
+    FinishServiceOrderUseCase,
+    DeliverServiceOrderUseCase,
+    AddStockItemToServiceOrderUseCase,
+    ApproveBudgetUseCase,
+    FindServiceOrdersByDocumentUseCase,
+    GetAverageExecutionTimeUseCase,
+    GetServiceOrderStatusUseCase,
+    HandleBudgetDecisionUseCase,
+    ListOperationalServiceOrdersUseCase,
+    ListServiceOrdersUseCase,
+    OpenServiceOrderUseCase,
+    {
+      provide: ServiceOrderRepository,
+      useClass: PrismaServiceOrderRepository,
+    },
+    WebhookStatusNotificationGateway,
+    {
+      provide: StatusNotificationGateway,
+      useClass: MetricsStatusNotificationGateway,
+    },
+  ],
+  exports: [ServiceOrderRepository],
 })
-export class ServiceOrdersModule { }
+export class ServiceOrdersModule {}

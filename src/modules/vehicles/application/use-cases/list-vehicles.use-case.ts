@@ -4,24 +4,24 @@ import { VehicleResponseDto } from '../dto/vehicle-response.dto';
 
 @Injectable()
 export class ListVehiclesUseCase {
-    constructor(
-        @Inject(VehicleRepository)
-        private readonly vehicleRepository: VehicleRepository,
-    ) { }
+  constructor(
+    @Inject(VehicleRepository)
+    private readonly vehicleRepository: VehicleRepository,
+  ) {}
 
-    async execute(): Promise<VehicleResponseDto[]> {
-        const vehicles = await this.vehicleRepository.findAll();
+  async execute(): Promise<VehicleResponseDto[]> {
+    const vehicles = await this.vehicleRepository.findAll();
 
-        return vehicles.map((vehicle) => ({
-            id: vehicle.id,
-            customerId: vehicle.customerId,
-            licensePlate: vehicle.licensePlate.value,
-            brand: vehicle.brand,
-            model: vehicle.model,
-            year: vehicle.year,
-            isActive: vehicle.isActive,
-            createdAt: vehicle.createdAt,
-            updatedAt: vehicle.updatedAt,
-        }));
-    }
+    return vehicles.map((vehicle) => ({
+      id: vehicle.id,
+      customerId: vehicle.customerId,
+      licensePlate: vehicle.licensePlate.value,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      year: vehicle.year,
+      isActive: vehicle.isActive,
+      createdAt: vehicle.createdAt,
+      updatedAt: vehicle.updatedAt,
+    }));
+  }
 }

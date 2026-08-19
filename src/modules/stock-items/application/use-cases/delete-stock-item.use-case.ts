@@ -3,22 +3,22 @@ import { StockItemRepository } from '../../domain/repositories/stock-item.reposi
 
 @Injectable()
 export class DeleteStockItemUseCase {
-    constructor(
-        @Inject(StockItemRepository)
-        private readonly stockItemRepository: StockItemRepository,
-    ) { }
+  constructor(
+    @Inject(StockItemRepository)
+    private readonly stockItemRepository: StockItemRepository,
+  ) {}
 
-    async execute(id: string): Promise<void> {
-        const stockItem = await this.stockItemRepository.findById(id);
+  async execute(id: string): Promise<void> {
+    const stockItem = await this.stockItemRepository.findById(id);
 
-        if (!stockItem) {
-            throw new NotFoundException('Stock item not found.');
-        }
-
-        stockItem.update({
-            isActive: false,
-        });
-
-        await this.stockItemRepository.update(stockItem);
+    if (!stockItem) {
+      throw new NotFoundException('Stock item not found.');
     }
+
+    stockItem.update({
+      isActive: false,
+    });
+
+    await this.stockItemRepository.update(stockItem);
+  }
 }

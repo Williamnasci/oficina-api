@@ -4,24 +4,24 @@ import { UpdateVehicleDto } from '../dto/update-vehicle.dto';
 
 @Injectable()
 export class UpdateVehicleUseCase {
-    constructor(
-        @Inject(VehicleRepository)
-        private readonly vehicleRepository: VehicleRepository,
-    ) { }
+  constructor(
+    @Inject(VehicleRepository)
+    private readonly vehicleRepository: VehicleRepository,
+  ) {}
 
-    async execute(id: string, input: UpdateVehicleDto): Promise<void> {
-        const vehicle = await this.vehicleRepository.findById(id);
+  async execute(id: string, input: UpdateVehicleDto): Promise<void> {
+    const vehicle = await this.vehicleRepository.findById(id);
 
-        if (!vehicle) {
-            throw new NotFoundException('Vehicle not found.');
-        }
-
-        vehicle.update({
-            brand: input.brand,
-            model: input.model,
-            year: input.year,
-        });
-
-        await this.vehicleRepository.update(vehicle);
+    if (!vehicle) {
+      throw new NotFoundException('Vehicle not found.');
     }
+
+    vehicle.update({
+      brand: input.brand,
+      model: input.model,
+      year: input.year,
+    });
+
+    await this.vehicleRepository.update(vehicle);
+  }
 }

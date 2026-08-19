@@ -10,19 +10,19 @@ import { PrismaCustomerRepository } from './infrastructure/repositories/prisma-c
 import { CustomersController } from './interfaces/http/controllers/customers.controller';
 
 @Module({
-    controllers: [CustomersController],
-    providers: [
-        CreateCustomerUseCase,
-        GetCustomerUseCase,
-        ListCustomersUseCase,
-        FindCustomerByDocumentUseCase,
-        UpdateCustomerUseCase,
-        DeleteCustomerUseCase,
-        {
-            provide: CustomerRepository,
-            useClass: PrismaCustomerRepository,
-        },
-    ],
-    exports: [CustomerRepository],
+  controllers: [CustomersController],
+  providers: [
+    CreateCustomerUseCase,
+    GetCustomerUseCase,
+    ListCustomersUseCase,
+    FindCustomerByDocumentUseCase,
+    UpdateCustomerUseCase,
+    DeleteCustomerUseCase,
+    {
+      provide: CustomerRepository,
+      useClass: PrismaCustomerRepository,
+    },
+  ],
+  exports: [CustomerRepository],
 })
-export class CustomersModule { }
+export class CustomersModule {}

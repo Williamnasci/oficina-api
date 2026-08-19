@@ -9,18 +9,18 @@ import { ServiceCatalogController } from './interfaces/http/controllers/service-
 import { DeleteServiceCatalogUseCase } from './application/use-cases/delete-service-catalog.use-case';
 
 @Module({
-    controllers: [ServiceCatalogController],
-    providers: [
-        CreateServiceCatalogUseCase,
-        GetServiceCatalogUseCase,
-        ListServiceCatalogUseCase,
-        UpdateServiceCatalogUseCase,
-        DeleteServiceCatalogUseCase,
-        {
-            provide: ServiceCatalogRepository,
-            useClass: PrismaServiceCatalogRepository,
-        },
-    ],
-    exports: [ServiceCatalogRepository],
+  controllers: [ServiceCatalogController],
+  providers: [
+    CreateServiceCatalogUseCase,
+    GetServiceCatalogUseCase,
+    ListServiceCatalogUseCase,
+    UpdateServiceCatalogUseCase,
+    DeleteServiceCatalogUseCase,
+    {
+      provide: ServiceCatalogRepository,
+      useClass: PrismaServiceCatalogRepository,
+    },
+  ],
+  exports: [ServiceCatalogRepository],
 })
-export class ServiceCatalogModule { }
+export class ServiceCatalogModule {}

@@ -2,23 +2,25 @@ import { ListServiceCatalogUseCase } from '../../../../../../src/modules/service
 import { ServiceCatalogRepository } from '../../../../../../src/modules/service-catalog/domain/repositories/service-catalog.repository';
 
 describe('ListServiceCatalogUseCase', () => {
-    let useCase: ListServiceCatalogUseCase;
-    let repository: jest.Mocked<ServiceCatalogRepository>;
+  let useCase: ListServiceCatalogUseCase;
+  let repository: jest.Mocked<ServiceCatalogRepository>;
 
-    beforeEach(() => {
-        repository = {
-            create: jest.fn(),
-            findAll: jest.fn(),
-            findById: jest.fn(),
-            update: jest.fn(),
-        };
-        useCase = new ListServiceCatalogUseCase(repository);
-    });
+  beforeEach(() => {
+    repository = {
+      create: jest.fn(),
+      findAll: jest.fn(),
+      findById: jest.fn(),
+      update: jest.fn(),
+    };
+    useCase = new ListServiceCatalogUseCase(repository);
+  });
 
-    it('should list service catalogs', async () => {
-        repository.findAll.mockResolvedValue([{ id: '1', name: 'Service', price: 100 } as any]);
-        const result = await useCase.execute();
-        expect(result.length).toBe(1);
-        expect(result[0].id).toBe('1');
-    });
+  it('should list service catalogs', async () => {
+    repository.findAll.mockResolvedValue([
+      { id: '1', name: 'Service', price: 100 } as any,
+    ]);
+    const result = await useCase.execute();
+    expect(result.length).toBe(1);
+    expect(result[0].id).toBe('1');
+  });
 });

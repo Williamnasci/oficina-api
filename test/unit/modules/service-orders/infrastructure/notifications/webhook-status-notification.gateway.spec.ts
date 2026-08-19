@@ -20,7 +20,10 @@ describe('WebhookStatusNotificationGateway', () => {
       get: jest.fn().mockReturnValue(undefined),
     } as unknown as ConfigService;
     const metricsService = { recordIntegrationError: jest.fn() } as any;
-    const gateway = new WebhookStatusNotificationGateway(configService, metricsService);
+    const gateway = new WebhookStatusNotificationGateway(
+      configService,
+      metricsService,
+    );
 
     await gateway.notifyStatusChanged(event);
 
@@ -36,7 +39,10 @@ describe('WebhookStatusNotificationGateway', () => {
       get: jest.fn().mockReturnValue('https://example.test/status'),
     } as unknown as ConfigService;
     const metricsService = { recordIntegrationError: jest.fn() } as any;
-    const gateway = new WebhookStatusNotificationGateway(configService, metricsService);
+    const gateway = new WebhookStatusNotificationGateway(
+      configService,
+      metricsService,
+    );
 
     await gateway.notifyStatusChanged(event);
 
@@ -58,9 +64,14 @@ describe('WebhookStatusNotificationGateway', () => {
       get: jest.fn().mockReturnValue('https://example.test/status'),
     } as unknown as ConfigService;
     const metricsService = { recordIntegrationError: jest.fn() } as any;
-    const gateway = new WebhookStatusNotificationGateway(configService, metricsService);
+    const gateway = new WebhookStatusNotificationGateway(
+      configService,
+      metricsService,
+    );
 
     await expect(gateway.notifyStatusChanged(event)).resolves.toBeUndefined();
-    expect(metricsService.recordIntegrationError).toHaveBeenCalledWith('status_notification_webhook');
+    expect(metricsService.recordIntegrationError).toHaveBeenCalledWith(
+      'status_notification_webhook',
+    );
   });
 });

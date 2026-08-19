@@ -5,13 +5,13 @@ import { UnitOfWork } from '../../domain/unit-of-work';
 
 @Global()
 @Module({
-    providers: [
-        PrismaService,
-        {
-            provide: UnitOfWork,
-            useClass: PrismaUnitOfWork,
-        },
-    ],
-    exports: [PrismaService, UnitOfWork],
+  providers: [
+    PrismaService,
+    {
+      provide: UnitOfWork,
+      useClass: PrismaUnitOfWork,
+    },
+  ],
+  exports: [PrismaService, UnitOfWork],
 })
 export class PrismaModule {}

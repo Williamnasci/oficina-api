@@ -4,18 +4,18 @@ import { ServiceOrderRepository } from '../../domain/repositories/service-order.
 
 @Injectable()
 export class GetServiceOrderUseCase {
-    constructor(
-        @Inject(ServiceOrderRepository)
-        private readonly serviceOrderRepository: ServiceOrderRepository,
-    ) { }
+  constructor(
+    @Inject(ServiceOrderRepository)
+    private readonly serviceOrderRepository: ServiceOrderRepository,
+  ) {}
 
-    async execute(id: string): Promise<ServiceOrderDetailsResponseDto> {
-        const serviceOrder = await this.serviceOrderRepository.findDetailsById(id);
+  async execute(id: string): Promise<ServiceOrderDetailsResponseDto> {
+    const serviceOrder = await this.serviceOrderRepository.findDetailsById(id);
 
-        if (!serviceOrder) {
-            throw new NotFoundException('Service order not found.');
-        }
-
-        return serviceOrder;
+    if (!serviceOrder) {
+      throw new NotFoundException('Service order not found.');
     }
+
+    return serviceOrder;
+  }
 }

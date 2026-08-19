@@ -4,22 +4,22 @@ import { ServiceCatalogResponseDto } from '../dto/service-catalog-response.dto';
 
 @Injectable()
 export class ListServiceCatalogUseCase {
-    constructor(
-        @Inject(ServiceCatalogRepository)
-        private readonly serviceCatalogRepository: ServiceCatalogRepository,
-    ) { }
+  constructor(
+    @Inject(ServiceCatalogRepository)
+    private readonly serviceCatalogRepository: ServiceCatalogRepository,
+  ) {}
 
-    async execute(): Promise<ServiceCatalogResponseDto[]> {
-        const services = await this.serviceCatalogRepository.findAll(false);
+  async execute(): Promise<ServiceCatalogResponseDto[]> {
+    const services = await this.serviceCatalogRepository.findAll(false);
 
-        return services.map((service) => ({
-            id: service.id,
-            name: service.name,
-            description: service.description,
-            price: service.price,
-            isActive: service.isActive,
-            createdAt: service.createdAt,
-            updatedAt: service.updatedAt,
-        }));
-    }
+    return services.map((service) => ({
+      id: service.id,
+      name: service.name,
+      description: service.description,
+      price: service.price,
+      isActive: service.isActive,
+      createdAt: service.createdAt,
+      updatedAt: service.updatedAt,
+    }));
+  }
 }

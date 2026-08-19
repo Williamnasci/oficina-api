@@ -4,28 +4,28 @@ import { CustomerResponseDto } from '../dto/customer-response.dto';
 
 @Injectable()
 export class GetCustomerUseCase {
-    constructor(
-        @Inject(CustomerRepository)
-        private readonly customerRepository: CustomerRepository,
-    ) { }
+  constructor(
+    @Inject(CustomerRepository)
+    private readonly customerRepository: CustomerRepository,
+  ) {}
 
-    async execute(id: string): Promise<CustomerResponseDto> {
-        const customer = await this.customerRepository.findById(id);
+  async execute(id: string): Promise<CustomerResponseDto> {
+    const customer = await this.customerRepository.findById(id);
 
-        if (!customer) {
-            throw new NotFoundException('Customer not found.');
-        }
-
-        return {
-            id: customer.id,
-            name: customer.name,
-            documentType: customer.document.type,
-            document: customer.document.value,
-            phone: customer.phone,
-            email: customer.email,
-            isActive: customer.isActive,
-            createdAt: customer.createdAt,
-            updatedAt: customer.updatedAt,
-        };
+    if (!customer) {
+      throw new NotFoundException('Customer not found.');
     }
+
+    return {
+      id: customer.id,
+      name: customer.name,
+      documentType: customer.document.type,
+      document: customer.document.value,
+      phone: customer.phone,
+      email: customer.email,
+      isActive: customer.isActive,
+      createdAt: customer.createdAt,
+      updatedAt: customer.updatedAt,
+    };
+  }
 }
