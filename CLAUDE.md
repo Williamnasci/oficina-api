@@ -32,13 +32,24 @@
   Isso tem prioridade sobre a preferência genérica por CDK/CloudFormation
   acima — use Terraform para toda a infraestrutura AWS deste repositório
   (Lambda, API Gateway, RDS), não CDK/CloudFormation.
-- Conta AWS usada é pessoal, Free Tier, região `us-east-2` (Ohio). Custo é
-  uma restrição real do projeto — ver `docs/rfc/0001-escolha-da-nuvem.md`
-  e `docs/adr/0003-cluster-kubernetes-local.md` antes de provisionar
-  qualquer recurso que não seja claramente Free Tier.
-- Credenciais atualmente configuradas na CLI são de **root** da conta —
-  não crie/rode Terraform contra produção sem antes confirmar com o
-  usuário a criação de um usuário/role IAM escopado para isso.
+- Conta AWS usada é uma sandbox do **AWS Academy Learner Lab** (migrada da
+  conta pessoal Free Tier em 2026-08-19), região fixa `us-east-1`.
+  Restrições reais e diferentes de uma conta normal: orçamento fixo de
+  USD 50 para todo o curso (não é mensal), sessão de lab de ~4h renovável
+  com credenciais **temporárias** (access key + secret key + session
+  token, todas expiram junto), e o `LabRole` da conta **nega
+  `iam:CreateUser`/gestão de IAM** — não é possível criar um usuário IAM
+  permanente para CI/CD. Por causa disso, os workflows de `apply` dos 3
+  repos que tocam AWS (`oficina-infra-k8s`, `oficina-infra-database`,
+  `oficina-lambda-auth`) são disparados manualmente
+  (`workflow_dispatch`), não automaticamente no merge — atualizar os 3
+  secrets AWS com uma sessão fresca do lab antes de cada apply. A EC2 do
+  cluster é terminada automaticamente pelo próprio Academy ao fim de cada
+  sessão (não precisa mais destruir manualmente); o RDS não é, e continua
+  consumindo o orçamento entre sessões. Ver
+  `docs/rfc/0001-escolha-da-nuvem.md` e
+  `docs/adr/0003-cluster-kubernetes-local.md` antes de provisionar
+  qualquer recurso novo.
 - Decisões arquiteturais desta fase estão documentadas em
   `docs/phase-3-plan.md`, `docs/rfc/` e `docs/adr/`. Consulte antes de
   propor uma alternativa já decidida e justificada ali.
