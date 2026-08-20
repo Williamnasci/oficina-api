@@ -23,7 +23,7 @@ Decisões arquiteturais completas (RFCs, ADRs, diagramas) ficam em [`docs/`](doc
 
 ## Descrição do Projeto
 
-Sistema back-end para gestão de oficinas mecânicas, desenvolvido como entrega do **Tech Challenge Fase 2** da Pós-Tech FIAP em Arquitetura de Software.
+Sistema back-end para gestão de oficinas mecânicas, desenvolvido como entrega do **Tech Challenge Fase 3** da Pós-Tech FIAP em Arquitetura de Software.
 
 A aplicação centraliza o fluxo operacional de uma oficina, contemplando cadastro de clientes, veículos, ordens de serviço, catálogo de serviços, controle de estoque de peças e insumos, orçamento e acompanhamento do ciclo de vida da ordem de serviço.
 
