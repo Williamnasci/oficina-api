@@ -942,6 +942,10 @@
           <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 6v6l4 2" stroke-width="2"/></svg>
           Tempo Médio
         </a>
+        <a class="nav-item" data-view="architecture">
+          <svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="3" stroke-width="2"/><circle cx="18" cy="6" r="3" stroke-width="2"/><circle cx="12" cy="18" r="3" stroke-width="2"/><path d="M8.5 7.5L11 16m4.5-8.5L13 16M9 6h6" stroke-width="2"/></svg>
+          Arquitetura & Infra
+        </a>
       </nav>
 
       <div class="sidebar-footer">
@@ -970,6 +974,10 @@
           <p id="viewSubtitle">Acompanhamento e evolução de ordens de serviço ativas na oficina.</p>
         </div>
         <div class="header-actions">
+          <a href="https://us5.datadoghq.com/dashboard/k2b-3e2-bz4/oficina-api---visao-geral" target="_blank" class="swagger-btn" title="Abre o dashboard Datadog (requer login na conta Datadog do projeto)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 17V9M13 17V5M8 17v-3"/></svg>
+            Datadog
+          </a>
           <a href="/docs" target="_blank" class="swagger-btn">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             API Swagger Docs
@@ -1348,6 +1356,76 @@
             </div>
             
             <button id="refreshMetricsBtn" class="btn btn-secondary btn-sm" style="margin-top: 15px;">Atualizar Métricas</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- View 8: Arquitetura & Infra -->
+      <section id="view-architecture" class="view-section">
+        <div class="card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h2 style="font-size: 1.15rem; font-weight: 700;">Saúde da Infraestrutura em Tempo Real</h2>
+              <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 4px;">Chama <code style="background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px;">GET /health</code> direto no ambiente publicado - prova ao vivo de que API, EC2/Kubernetes e RDS estão de pé.</p>
+            </div>
+            <button id="refreshArchHealthBtn" class="btn btn-secondary btn-sm">Verificar agora</button>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
+            <div class="card" style="margin-bottom: 0; padding: 16px 20px;">
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">API (EC2 / Kubernetes)</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="archAppDot" class="status-dot inactive"></span>
+                <span id="archAppText" style="font-weight: 600;">Verificando...</span>
+              </div>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 16px 20px;">
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Banco de Dados (RDS PostgreSQL)</div>
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span id="archDbDot" class="status-dot inactive"></span>
+                <span id="archDbText" style="font-weight: 600;">Verificando...</span>
+              </div>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 16px 20px;">
+              <div style="font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Última checagem</div>
+              <div id="archLastCheck" style="font-weight: 600; font-family: monospace; font-size: 0.9rem;">-</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h2 style="font-size: 1.15rem; font-weight: 700; margin-bottom: 4px;">Repositórios & Observabilidade</h2>
+          <p style="color: var(--text-secondary); font-size: 0.85rem; margin-bottom: 20px;">O desafio foi dividido em 4 repositórios (todos públicos) mais o dashboard de observabilidade da aplicação.</p>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+            <div class="card" style="margin-bottom: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-weight: 700;">oficina-api</div>
+              <div style="color: var(--text-secondary); font-size: 0.82rem; flex: 1;">API NestJS (Clean Architecture) + este painel de demonstração.</div>
+              <a href="https://github.com/Williamnasci/oficina-api" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none; text-align: center;">Abrir no GitHub</a>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-weight: 700;">oficina-lambda-auth</div>
+              <div style="color: var(--text-secondary); font-size: 0.82rem; flex: 1;">Autenticação serverless (Lambda + API Gateway) usada no login por CPF/CNPJ.</div>
+              <a href="https://github.com/Williamnasci/oficina-lambda-auth" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none; text-align: center;">Abrir no GitHub</a>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-weight: 700;">oficina-infra-k8s</div>
+              <div style="color: var(--text-secondary); font-size: 0.82rem; flex: 1;">Terraform do cluster Kubernetes (Kind sobre EC2) que roda a API.</div>
+              <a href="https://github.com/Williamnasci/oficina-infra-k8s" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none; text-align: center;">Abrir no GitHub</a>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-weight: 700;">oficina-infra-database</div>
+              <div style="color: var(--text-secondary); font-size: 0.82rem; flex: 1;">Terraform do RDS PostgreSQL usado pela API.</div>
+              <a href="https://github.com/Williamnasci/oficina-infra-database" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none; text-align: center;">Abrir no GitHub</a>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; border-color: rgba(99, 102, 241, 0.3);">
+              <div style="font-weight: 700;">Datadog - Visão Geral</div>
+              <div style="color: var(--text-secondary); font-size: 0.82rem; flex: 1;">Volume de OS, tempo médio por status, erros de integração, latência e healthcheck (requer login Datadog).</div>
+              <a href="https://us5.datadoghq.com/dashboard/k2b-3e2-bz4/oficina-api---visao-geral" target="_blank" class="btn btn-sm" style="text-decoration: none; text-align: center; background: linear-gradient(135deg, var(--color-primary), var(--color-info));">Abrir Dashboard</a>
+            </div>
+            <div class="card" style="margin-bottom: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px;">
+              <div style="font-weight: 700;">Swagger / OpenAPI</div>
+              <div style="color: var(--text-secondary); font-size: 0.82rem; flex: 1;">Documentação interativa de todos os endpoints da API publicada.</div>
+              <a href="/docs" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration: none; text-align: center;">Abrir Swagger</a>
+            </div>
           </div>
         </div>
       </section>
@@ -1748,7 +1826,8 @@
       'customers-vehicles': { title: 'Clientes e Veículos', subtitle: 'Crie e consulte o cadastro de clientes e automóveis.' },
       'catalogs': { title: 'Catálogos & Serviços', subtitle: 'Gestão de estoque de peças e cadastro de novos serviços prestados.' },
       'budget-decision': { title: 'Simulador de Orçamentos', subtitle: 'Simule o feedback de aprovação/rejeição enviado pelo cliente.' },
-      'metrics': { title: 'Tempo Médio Operacional', subtitle: 'Métricas analíticas do ciclo de trabalho e eficiência da oficina.' }
+      'metrics': { title: 'Tempo Médio Operacional', subtitle: 'Métricas analíticas do ciclo de trabalho e eficiência da oficina.' },
+      'architecture': { title: 'Arquitetura & Infra', subtitle: 'Status ao vivo do ambiente publicado, repositórios e observabilidade.' }
     };
 
     navItems.forEach(item => {
@@ -1785,6 +1864,8 @@
           loadCatalogLists();
         } else if (targetView === 'metrics') {
           loadMetrics();
+        } else if (targetView === 'architecture') {
+          checkArchitectureHealth();
         }
       });
     });
@@ -1842,6 +1923,40 @@
         serverText.textContent = 'Indisponível';
       }
       return false;
+    }
+
+    // Health checker detalhado (view Arquitetura & Infra) - mostra app e
+    // database separadamente, ao contrario do dot generico da sidebar,
+    // porque o objetivo aqui e provar ao vivo, na apresentacao, que o
+    // caminho completo (API -> EC2/Kubernetes -> RDS) esta de pe.
+    async function checkArchitectureHealth() {
+      const appDot = document.getElementById('archAppDot');
+      const appText = document.getElementById('archAppText');
+      const dbDot = document.getElementById('archDbDot');
+      const dbText = document.getElementById('archDbText');
+      const lastCheck = document.getElementById('archLastCheck');
+
+      appText.textContent = 'Verificando...';
+      dbText.textContent = 'Verificando...';
+
+      try {
+        const health = await apiRequest('/health');
+        const appOk = health && health.app === 'ok';
+        const dbOk = health && health.database === 'ok';
+
+        appDot.className = `status-dot ${appOk ? 'active' : 'inactive'}`;
+        appText.textContent = appOk ? 'Operacional' : 'Indisponível';
+
+        dbDot.className = `status-dot ${dbOk ? 'active' : 'inactive'}`;
+        dbText.textContent = dbOk ? 'Operacional' : 'Indisponível';
+      } catch (err) {
+        appDot.className = 'status-dot inactive';
+        appText.textContent = 'Indisponível';
+        dbDot.className = 'status-dot inactive';
+        dbText.textContent = 'Indisponível';
+      }
+
+      lastCheck.textContent = new Date().toLocaleTimeString('pt-BR');
     }
 
     // Session status
@@ -2797,6 +2912,7 @@
     }
 
     document.getElementById('refreshMetricsBtn').addEventListener('click', loadMetrics);
+    document.getElementById('refreshArchHealthBtn').addEventListener('click', checkArchitectureHealth);
 
     // Edit Customer Modal handlers
     function openEditCustomerModal(id, name, docType, doc, phone, email) {
