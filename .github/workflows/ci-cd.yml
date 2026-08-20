@@ -12,6 +12,18 @@ on:
 permissions:
   contents: read
 
+# Sem isso, um push em main (deploy automatico) e um workflow_dispatch manual
+# quase simultaneos rodam o job de deploy em paralelo contra o MESMO
+# cluster/release do Helm - reproduzido na pratica: dois "helm upgrade
+# --install datadog-agent" concorrentes, um deles falhando com "UPGRADE
+# FAILED: release: already exists". cancel-in-progress=false enfileira em
+# vez de cancelar um deploy ja em andamento (cancelar no meio podia deixar o
+# cluster num estado pior do que a corrida original). O group inclui
+# github.ref para nao serializar PRs de branches diferentes entre si.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 env:
   LOCAL_IMAGE_NAME: oficina-tech-challenge
   DOCKERHUB_IMAGE_NAME: oficina-tech-challenge
