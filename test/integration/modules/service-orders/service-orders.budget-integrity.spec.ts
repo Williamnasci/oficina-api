@@ -66,7 +66,7 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       .send({ username: 'admin', password: 'admin' })
       .expect(201);
 
-    accessToken = loginResponse.body.access_token;
+    accessToken = (loginResponse.body as { access_token: string }).access_token;
   });
 
   afterAll(async () => {
@@ -82,7 +82,7 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       .send({ customerId: ids.customer, vehicleId: ids.vehicle })
       .expect(201);
 
-    const orderId = response.body.id as string;
+    const orderId = (response.body as { id: string }).id;
     createdOrderIds.push(orderId);
 
     return orderId;
@@ -284,6 +284,13 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
     // send-budget so pode falhar (422) se a OS ja tiver saido de
     // IN_DIAGNOSIS por outro motivo - nao deveria acontecer aqui.
     expect(sendBudgetResult.status).toBe(204);
+
+    // addService so tem dois desfechos legitimos nesta corrida: 204 (venceu
+    // antes do send-budget mudar o status) ou 422 (send-budget mudou o
+    // status primeiro, DomainException do ALT-01). Qualquer outro codigo
+    // (ex.: 500) e um bug real e nao deve passar batido so porque o
+    // invariante de totais abaixo aceitaria zero itens de qualquer forma.
+    expect([204, 422]).toContain(addServiceResult.status);
 
     const order = await prisma.serviceOrder.findUniqueOrThrow({
       where: { id: orderId },
