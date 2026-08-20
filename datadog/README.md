@@ -7,6 +7,7 @@ Definições versionadas do dashboard e dos monitors criados via API do Datadog 
 - `dashboard.json` — [Oficina API - Visão Geral](https://us5.datadoghq.com/dashboard/k2b-3e2-bz4/oficina-api---visao-geral): volume de OS, tempo médio por status, erros de integração, latência média, healthcheck.
 - `monitors/healthcheck.json` — alerta quando `healthcheck_status` fica abaixo de 1 por 5 minutos.
 - `monitors/integration-errors.json` — alerta quando há mais de 5 erros de integração (webhook de notificação de status) em 15 minutos.
+- `monitors/service-order-processing-errors.json` — alerta quando há mais de 3 respostas 5xx nas rotas `/service-orders*` em 15 minutos. Diferente do monitor de integração acima (que cobre só o webhook externo), este cobre falha no processamento da ordem de serviço em si — abertura, diagnóstico, orçamento, transições de status.
 
 ## Nomenclatura das métricas
 
