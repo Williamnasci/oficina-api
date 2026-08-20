@@ -74,8 +74,8 @@ erDiagram
 
     ServiceOrderService {
         uuid id PK
-        uuid serviceOrderId FK
-        uuid serviceId FK
+        uuid serviceOrderId FK "unique composto com serviceId"
+        uuid serviceId FK "unique composto com serviceOrderId"
         int quantity
         decimal unitPrice
         decimal totalPrice
@@ -83,8 +83,8 @@ erDiagram
 
     ServiceOrderStockItem {
         uuid id PK
-        uuid serviceOrderId FK
-        uuid stockItemId FK
+        uuid serviceOrderId FK "unique composto com stockItemId"
+        uuid stockItemId FK "unique composto com serviceOrderId"
         int quantity
         decimal unitPrice
         decimal totalPrice
@@ -110,4 +110,5 @@ O domínio da oficina é intrinsecamente relacional e transacional: uma ordem de
 | Índices `@@index([serviceOrderId])` e `@@index([serviceId])`/`[stockItemId])` nas tabelas associativas | Já existentes no schema da Fase 2; permanecem críticos agora porque os dashboards exigidos pelo desafio ("tempo médio de execução por status", "volume diário de OS") fazem `JOIN`/`GROUP BY` frequentes a partir de `ServiceOrder` passando por essas tabelas. |
 | `document` (Customer) e `licensePlate` (Vehicle) com `@unique` | Garante no nível de banco a mesma invariante que a Lambda de autenticação depende para localizar exatamente um cliente por CPF — sem essa constraint, uma falha de aplicação poderia inserir CPFs duplicados e quebrar silenciosamente o login. |
 | `startedAt`, `finishedAt`, `deliveredAt` em `ServiceOrder` | Timestamps explícitos por marco do ciclo de vida (em vez de só `updatedAt`) são o que permite calcular "tempo médio de execução por status" diretamente em SQL, sem depender de uma tabela de auditoria/histórico separada. |
+| `@@unique([serviceOrderId, serviceId])` em `ServiceOrderService` e `@@unique([serviceOrderId, stockItemId])` em `ServiceOrderStockItem` (migrations de 2026-08-19) | Corrige uma corrida de concorrência real, encontrada por revisão externa: sem essa constraint, duas inclusões concorrentes do mesmo serviço/peça na mesma OS podiam criar duas linhas em vez de uma, além de sustentar o `upsert` usado na correção do lost update em `servicesAmount`/`stockItemsAmount` (ver `prisma-service-order.repository.ts`). |
 | Migração de StatefulSet Postgres (K8s) para RDS gerenciado | Ganha backups automáticos e isolamento de falhas do plano de dados em relação ao cluster de aplicação — decisão registrada em [RFC-0002](rfc/0002-escolha-do-banco-de-dados-gerenciado.md). |

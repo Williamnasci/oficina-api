@@ -1,0 +1,12 @@
+{
+  "name": "[oficina-api] Falhas no processamento de ordens de servico",
+  "type": "metric alert",
+  "query": "sum(last_15m):sum:requests.count{route:/service-orders*,status_code:5*}.as_count() > 3",
+  "message": "Mais de 3 respostas 5xx nas rotas de ordens de servico (/service-orders*) nos ultimos 15 minutos - falha no processamento em si (abertura, diagnostico, orcamento, transicoes de status), nao um erro de integracao externa. Verificar logs correlacionados no Datadog (req.id) e o healthcheck do banco.",
+  "tags": ["service:oficina-api", "env:production"],
+  "options": {
+    "thresholds": { "critical": 3 },
+    "notify_no_data": false,
+    "renotify_interval": 0
+  }
+}

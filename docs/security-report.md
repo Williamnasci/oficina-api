@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento registra a análise de segurança realizada na Fase 2 do Tech Challenge, com foco em dependências, imagem Docker, pipeline de CI/CD, observabilidade e práticas de hardening aplicadas ao backend da Oficina Mecânica.
+Este documento registra a análise de segurança realizada na Fase 2 do Tech Challenge, com foco em dependências, imagem Docker, pipeline de CI/CD, observabilidade e práticas de hardening aplicadas ao backend da Oficina Mecânica. Reexecutado e atualizado na Fase 3 (ver seção "Reexecução — 2026-08-20" abaixo); a análise original de julho/2026 permanece preservada como registro histórico.
 
 ## Escopo e Premissas Acadêmicas
 
@@ -54,6 +54,39 @@ Antes da correção, o cenário era: `npm audit` com 4 HIGH / 5 MODERATE / 1 LOW
 * Dependência transitiva `@hono/node-server` (via `@prisma/dev`), introduzida pelo ecossistema Prisma: vulnerabilidade MODERATE/MEDIUM de bypass de middleware por barras repetidas em `serveStatic` ([CVE-2026-39406](https://avd.aquasec.com/nvd/cve-2026-39406)).
   * A correção exigiria `npm audit fix --force`, que instalaria `prisma@6.19.3` — downgrade incompatível com a versão de Prisma (`7.8.0`) utilizada pelo projeto.
   * Risco aceito para o contexto acadêmico do Tech Challenge; item de acompanhamento para quando o Prisma publicar uma versão estável compatível com o `@hono/node-server` corrigido.
+
+## Reexecução — 2026-08-20 (Fase 3)
+
+A análise foi reexecutada do zero nesta data, como parte de uma auditoria de documentação da Fase 3 (não uma rotina agendada) — a base de vulnerabilidades do Trivy estava desatualizada desde junho/2026 e foi atualizada antes do scan.
+
+### Resultado antes da correção
+
+| Ferramenta | HIGH | CRITICAL | MODERATE/MEDIUM | LOW |
+|------------|------|----------|------------------|-----|
+| `npm audit` (produção) | 6 | 0 | 4 | 1 |
+| Trivy filesystem (`package-lock.json`) | 5 | 0 | 6 | 0 |
+| Trivy imagem (`oficina-tech-challenge`) | 8 | 0 | 12 | 0 |
+
+Bem acima do que a execução de julho havia registrado (0 HIGH em todas as ferramentas) — a divergência é esperada: 6 semanas sem reauditoria, mais dependências novas da Fase 3 (`dd-trace`, `nestjs-pino`, `@nestjs/swagger` mais recente).
+
+### Correção aplicada
+
+**`npm audit fix`** (sem `--force`, sem mudança breaking): atualizou 47 pacotes, removeu 6, alterou 38 (`package-lock.json`; `package.json` não mudou — todos os bumps couberam nos ranges semver já declarados). Revalidado com sucesso após `npx prisma generate`: `npm run build`, `npx tsc --noEmit` e a suíte completa (**65 suítes / 232 testes**, entre unitários e integração).
+
+### Resultado após a correção
+
+| Ferramenta | HIGH | CRITICAL | MODERATE/MEDIUM | LOW |
+|------------|------|----------|------------------|-----|
+| `npm audit` (produção) | 3 | 0 | 0 | 0 |
+| Trivy filesystem (`package-lock.json`) | 1 | 0 | 0 | 0 |
+| Trivy imagem (`oficina-tech-challenge`) | 4 | 0 | 6 | 0 |
+
+### Achado remanescente (risco aceito)
+
+* **Cadeia `prisma` / `@prisma/config` / `deepmerge-ts`**: `deepmerge-ts` tem uma vulnerabilidade HIGH de esgotamento de pilha (stack exhaustion) ao mesclar grafos de objeto recursivos — [GHSA-ggr8-5vv4-36mx](https://github.com/advisories/GHSA-ggr8-5vv4-36mx). `@prisma/config` depende de uma versão vulnerável, e `prisma` depende de `@prisma/config`.
+  * A correção exigiria `npm audit fix --force`, que instalaria `prisma@6.12.0` — downgrade de versão major incompatível com a versão em uso (`^7.8.0`), com risco real de quebrar geração de client, migrations ou o schema atual.
+  * Risco aceito para o contexto acadêmico do Tech Challenge; item de acompanhamento para quando o ecossistema Prisma publicar uma versão 7.x estável que não dependa mais da versão vulnerável de `deepmerge-ts`.
+* Os achados adicionais reportados pelo Trivy na imagem (`brace-expansion`, `ip-address`, e possíveis outros não detalhados aqui) têm correção disponível via `npm audit fix` já aplicada nesta rodada, exceto os listados acima — reexecutar `trivy image` após qualquer atualização futura de dependências para confirmar.
 
 ## Mitigações Implementadas
 
@@ -125,3 +158,5 @@ As validações executadas demonstraram:
 * Processo de validação contínua suportado por testes automatizados e análise de vulnerabilidades: build, suíte completa (63 suítes / 216 testes) e health check via Docker Compose foram revalidados após cada correção de dependência.
 
 A única vulnerabilidade remanescente (`@hono/node-server`, MODERATE/MEDIUM) é transitiva, conhecida e sem correção não destrutiva disponível no momento — depende de uma versão do Prisma incompatível com a utilizada pelo projeto. Ela foi registrada como risco aceito para esta entrega e permanece como item de acompanhamento. Essa aceitação não deve ser transportada automaticamente para um ambiente produtivo, e a dependência deve ser reauditada periodicamente à medida que novas versões estáveis do Prisma forem publicadas.
+
+**Nota (2026-08-20):** a conclusão acima descreve o estado de julho/2026, preservado como registro histórico. A reauditoria da Fase 3 (ver "Reexecução — 2026-08-20" acima) encontrou um cenário bem pior antes da correção (até 8 HIGH), a maior parte resolvida sem breaking change via `npm audit fix`. O achado remanescente hoje não é mais o `@hono/node-server` de julho (esse foi resolvido nesta rodada) — é a cadeia `prisma`/`@prisma/config`/`deepmerge-ts` (HIGH), pelo mesmo motivo estrutural: só corrige com downgrade incompatível do Prisma. A recomendação prática é a mesma de julho — reauditar periodicamente, não perpetuar a aceitação em produção.
