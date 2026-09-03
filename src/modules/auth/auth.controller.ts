@@ -14,17 +14,12 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Fazer login como administrador' })
-  // async sem await de proposito: mantem o metodo Promise-returning (padrao
-  // NestJS) para que credenciais invalidas rejeitem a Promise em vez de
-  // lancar sincrono - testado explicitamente com .rejects.toThrow().
   // eslint-disable-next-line @typescript-eslint/require-await
   async login(@Body() loginDto: LoginDto) {
     const demoUsername = this.configService.get<string>(
       'AUTH_DEMO_USERNAME',
       'admin',
     );
-    // Sem fallback: um AUTH_DEMO_PASSWORD ausente deve falhar alto, nao aceitar
-    // silenciosamente uma senha fraca conhecida ("admin") como valida.
     const demoPassword =
       this.configService.getOrThrow<string>('AUTH_DEMO_PASSWORD');
 

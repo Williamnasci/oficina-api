@@ -43,7 +43,6 @@ describe('PrismaCustomerRepository', () => {
       const error: any = new Error();
       error.code = 'P2002';
       error.constructor = { name: 'PrismaClientKnownRequestError' };
-      // Simulating Prisma error
       prisma.customer.create.mockRejectedValue(
         Object.assign(new Error(), {
           code: 'P2002',

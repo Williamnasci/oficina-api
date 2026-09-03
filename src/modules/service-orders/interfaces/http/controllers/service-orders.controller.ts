@@ -193,9 +193,6 @@ export class ServiceOrdersController {
   @Get(':id/status')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  // Sem @Roles('admin') de proposito: e a consulta de status que o PDF
-  // descreve como acessivel ao cliente com o JWT emitido pela Lambda
-  // (login por CPF), nao so pelo admin do back-office.
   @ApiOperation({ summary: 'Consultar status da ordem de servico' })
   @ApiParam({
     name: 'id',

@@ -6,10 +6,6 @@ import {
 } from '../../application/ports/status-notification.gateway';
 import { WebhookStatusNotificationGateway } from './webhook-status-notification.gateway';
 
-// Decora o gateway de webhook para tambem alimentar a metrica de negocio
-// "tempo ate atingir cada status" (dashboard exigido no PDF), sem espalhar
-// chamadas de metricas pelos 6 use-cases de transicao de status - todos ja
-// chamam notifyStatusChanged de forma uniforme.
 @Injectable()
 export class MetricsStatusNotificationGateway extends StatusNotificationGateway {
   constructor(

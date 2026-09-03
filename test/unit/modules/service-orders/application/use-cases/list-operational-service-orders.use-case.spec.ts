@@ -5,9 +5,6 @@ import { ServiceOrderRepository } from '../../../../../../src/modules/service-or
 
 describe('ListOperationalServiceOrdersUseCase', () => {
   it('should return mapped operational service orders', async () => {
-    // Double minimo (so o metodo usado pelo caso de uso) - o cast
-    // explicito documenta que e um double parcial de proposito, em vez
-    // de deixar o compilador reclamar de propriedades faltando.
     const repo = {
       findOperationalQueue: jest.fn().mockResolvedValue([
         new ServiceOrder({

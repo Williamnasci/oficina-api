@@ -8,9 +8,6 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 import { AuthenticatedUser } from './jwt.strategy';
 
-// Roda depois do JwtAuthGuard (que ja populou request.user a partir do
-// payload do JWT). Sem @Roles() no endpoint, deixa passar - o guard so
-// restringe quando o endpoint pede explicitamente.
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

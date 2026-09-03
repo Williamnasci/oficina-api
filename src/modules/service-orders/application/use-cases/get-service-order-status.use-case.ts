@@ -37,10 +37,6 @@ export class GetServiceOrderStatusUseCase {
       throw new NotFoundException('Service order not found.');
     }
 
-    // Admin (back-office) consulta qualquer OS. Cliente (JWT emitido pela
-    // Lambda, sub = customer.id, sem role) so pode consultar a propria -
-    // sem isso, qualquer cliente autenticado com o UUID de outra OS
-    // conseguia ver o status de um pedido que nao e dele.
     const isAdmin = requestingUser.role === 'admin';
     const isOwner = String(requestingUser.userId) === serviceOrder.customerId;
 

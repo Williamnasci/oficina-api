@@ -181,10 +181,6 @@ describe('ServiceOrders transactional budget and stock flow (real integration)',
       where: { id: ids.stockItem },
     });
 
-    // Duas OS pedindo mais da metade do estoque cada uma - juntas
-    // excedem o disponivel, mas nenhuma sozinha excede. Um read-check-
-    // write nao atomico deixaria as duas passarem (overselling); o
-    // decremento condicional (WHERE quantity >= X) so deixa uma.
     const requestedEach = Math.ceil(stockBefore.quantity / 2) + 1;
 
     const [orderAId, orderBId] = await Promise.all(

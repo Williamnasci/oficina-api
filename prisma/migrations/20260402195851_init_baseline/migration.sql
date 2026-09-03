@@ -1,9 +1,4 @@
-/*
-  Warnings:
-
-  - You are about to drop the `HealthCheck` table. If the table is not empty, all the data it contains will be lost.
-
-*/
+-- Warning: dropping `HealthCheck` deletes its existing data.
 -- CreateEnum
 CREATE TYPE "CustomerDocumentType" AS ENUM ('CPF', 'CNPJ');
 

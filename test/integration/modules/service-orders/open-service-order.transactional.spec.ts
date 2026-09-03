@@ -5,12 +5,6 @@ import { AppModule } from '../../../../src/app.module';
 import { PrismaService } from '../../../../src/shared/infrastructure/prisma/prisma.service';
 import { CustomerDocumentType } from '../../../../src/modules/customers/domain/enums/customer-document-type.enum';
 
-// Prova, contra o banco real (nao mocks), que abrir uma OS e atomico entre
-// os repositorios de Customer, Vehicle e ServiceOrder (ALT-03). Antes do
-// UnitOfWork, cada repositorio escrevia em sua propria transacao Prisma - se
-// a etapa de estoque falhasse por ultimo, cliente e veiculo (recem-criados
-// nesta mesma chamada) ficavam orfaos no banco, sem OS nenhuma referenciando
-// eles.
 describe('OpenServiceOrderUseCase atomicity (real integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -82,8 +76,6 @@ describe('OpenServiceOrderUseCase atomicity (real integration)', () => {
           year: 2015,
         },
         services: [{ serviceId: ids.service, quantity: 1 }],
-        // pede mais do que existe em estoque - a ultima escrita do
-        // fluxo (addStockItemToOrder) falha de proposito.
         stockItems: [
           { stockItemId: ids.stockItem, quantity: stockBefore.quantity + 1 },
         ],
@@ -100,9 +92,6 @@ describe('OpenServiceOrderUseCase atomicity (real integration)', () => {
       where: { id: ids.stockItem },
     });
 
-    // Antes do UnitOfWork, este customer e este vehicle ficariam
-    // persistidos (a falha era so no ultimo passo), mesmo sem nenhuma OS
-    // valida referenciando eles.
     expect(customerAfter).toBeNull();
     expect(vehicleAfter).toBeNull();
     expect(stockAfter.quantity).toBe(stockBefore.quantity);

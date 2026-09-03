@@ -46,10 +46,6 @@ describe('OpenServiceOrderUseCase', () => {
       findByLicensePlate: jest.fn(),
     };
     metricsService = { recordServiceOrderCreated: jest.fn() };
-    // Simula o comportamento real do UnitOfWork sem abrir uma transacao
-    // de verdade: so executa o callback com um tx fake e repassa o
-    // resultado/erro, preservando o comportamento sincrono esperado
-    // pelos testes abaixo.
     unitOfWork = {
       runInTransaction: jest.fn((work: (tx: unknown) => Promise<unknown>) =>
         work({}),
@@ -92,9 +88,6 @@ describe('OpenServiceOrderUseCase', () => {
 
     expect(unitOfWork.runInTransaction).toHaveBeenCalledTimes(1);
 
-    // Todas as escritas devem ter recebido o MESMO tx (o objeto fake
-    // passado pelo mock de runInTransaction) como ultimo argumento -
-    // prova de que ninguem esqueceu de repassar o contexto transacional.
     const receivedTxs = [
       customerRepo.create.mock.calls[0]?.[1],
       vehicleRepo.create.mock.calls[0]?.[1],
@@ -161,9 +154,6 @@ describe('OpenServiceOrderUseCase', () => {
   it('should not record the "created" metric when the transaction is rolled back', async () => {
     customerRepo.findByDocument.mockResolvedValue(null);
     vehicleRepo.findByLicensePlate.mockResolvedValue(null);
-    // Simula uma falha no meio do fluxo (ex.: estoque insuficiente no
-    // ultimo item) propagando o erro atraves do UnitOfWork, como o
-    // Prisma faria de verdade ao rejeitar o callback de $transaction.
     serviceOrderRepo.addStockItemToOrder.mockRejectedValue(
       new Error('Insufficient stock quantity.'),
     );
