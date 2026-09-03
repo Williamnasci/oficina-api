@@ -13,8 +13,7 @@ type HttpErrorWithStatus = Error & {
   getStatus?: () => number;
 };
 
-// @types/express tipa Request.route como `any` - Omit+intersect (nao & puro,
-// que colapsaria pra `any` de novo) para sobrescrever com um tipo seguro.
+// Express types expose Request.route as any.
 type RequestWithTypedRoute = Omit<Request, 'route'> & {
   route?: { path?: string };
 };

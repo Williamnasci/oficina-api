@@ -90,12 +90,6 @@ model ServiceOrderService {
   service        ServiceCatalog @relation(fields: [serviceId], references: [id])
   serviceOrder   ServiceOrder   @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
 
-  // Mesmo motivo da constraint equivalente em ServiceOrderStockItem: sem
-  // isso, duas requisicoes concorrentes adicionando o mesmo servico numa
-  // mesma OS podiam cada uma ver "nao existe ainda" (findFirst nao e
-  // atomico) e criar duas linhas, ou uma sobrescrever a quantidade lida
-  // pela outra. O repository usa upsert() para resolver isso via ON
-  // CONFLICT no banco.
   @@unique([serviceOrderId, serviceId])
   @@index([serviceOrderId])
   @@index([serviceId])
@@ -113,10 +107,6 @@ model ServiceOrderStockItem {
   serviceOrder   ServiceOrder @relation(fields: [serviceOrderId], references: [id], onDelete: Cascade)
   stockItem      StockItem    @relation(fields: [stockItemId], references: [id])
 
-  // Sem isso, duas requisicoes concorrentes adicionando o mesmo item numa
-  // mesma OS podiam cada uma ver "nao existe ainda" e criar duas linhas
-  // (findFirst + create/update nao e atomico). Com a constraint, o repository
-  // usa upsert() para resolver isso via ON CONFLICT no banco.
   @@unique([serviceOrderId, stockItemId])
   @@index([serviceOrderId])
   @@index([stockItemId])

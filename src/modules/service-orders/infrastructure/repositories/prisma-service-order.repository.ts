@@ -144,17 +144,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     order: ServiceOrder,
     expectedStatus?: ServiceOrderStatus,
   ): Promise<void> {
-    // Deliberadamente SEM servicesAmount/stockItemsAmount/totalAmount: essa
-    // escrita usa o snapshot em memoria carregado no inicio do caso de uso
-    // (antes da transicao de dominio ser aplicada). Se uma inclusao de
-    // servico/peca incrementar esses campos atomicamente enquanto uma
-    // transicao de status estiver em voo, escrever os valores antigos aqui
-    // apagaria silenciosamente esse incremento (achado ALT-N01). Nenhum dos
-    // 7 metodos de transicao de dominio (registerDiagnosis,
-    // sendBudgetForApproval, approveBudget, rejectBudget, startExecution,
-    // finish, deliver) toca nesses campos - so addServiceToOrder/
-    // addStockItemToOrder tem essa responsabilidade, via incremento
-    // atomico proprio. update() nao deve reescrever campos que nao possui.
     const data = {
       status: order.status,
       diagnosis: order.diagnosis,
@@ -183,13 +172,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       return;
     }
 
-    // Atualizacao condicional: so aplica se o status persistido ainda for
-    // o mesmo lido antes da transicao em memoria ser aplicada na
-    // entidade - checagem e escrita na MESMA instrucao SQL, sem janela
-    // entre ler o estado e escrever nele. Sem isso, duas transicoes
-    // concorrentes (ex.: aprovar e recusar quase simultaneamente) podiam
-    // ambas validar contra o mesmo status antigo e a ultima escrita
-    // vencer silenciosamente, mesmo apos a outra ja ter sido persistida.
     const updated = await this.prisma.serviceOrder.updateMany({
       where: { id: order.id, status: expectedStatus },
       data,
@@ -217,12 +199,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     quantity: number,
     tx?: TransactionContext,
   ): Promise<void> {
-    // Prisma nao suporta $transaction aninhada (chamar $transaction de
-    // dentro de outra nao "adere" a transacao externa, abre uma nova) -
-    // se um tx externo foi passado (chamador ja esta dentro de um
-    // UnitOfWork.runInTransaction), participamos dele diretamente em vez
-    // de abrir uma transacao propria; senao, comportamento original
-    // (atomica por chamada).
     if (tx) {
       await this.addServiceToOrderWithClient(
         tx as Prisma.TransactionClient,
@@ -268,12 +244,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     const unitPrice = Number(service.price);
     const deltaAmount = unitPrice * quantity;
 
-    // Incremento atomico (SET col = col + delta no banco), condicionado ao
-    // estado na MESMA instrucao SQL - nao ha janela entre checar se a OS
-    // ainda aceita alteracao de itens e escrever nela. Substitui o padrao
-    // antigo (ler todos os itens, somar em memoria, escrever um valor
-    // absoluto), que sob concorrencia deixava servicesAmount refletir so
-    // uma das duas inclusoes concorrentes (lost update).
     const updated = await tx.serviceOrder.updateMany({
       where: {
         id: serviceOrderId,
@@ -292,10 +262,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       );
     }
 
-    // upsert (nao findFirst + create/update): a constraint
-    // unique(serviceOrderId, serviceId) faz o Postgres resolver a corrida
-    // via ON CONFLICT, e quantity/totalPrice sao incrementados de forma
-    // atomica - mesmo padrao ja usado para peca de estoque, abaixo.
     await tx.serviceOrderService.upsert({
       where: {
         serviceOrderId_serviceId: { serviceOrderId, serviceId },
@@ -375,7 +341,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     quantity: number,
     tx?: TransactionContext,
   ): Promise<void> {
-    // Ver comentario em addServiceToOrder sobre $transaction nao aninhar.
     if (tx) {
       await this.addStockItemToOrderWithClient(
         tx as Prisma.TransactionClient,
@@ -421,11 +386,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
     const unitPrice = Number(stockItem.unitPrice);
     const deltaAmount = unitPrice * quantity;
 
-    // Incremento atomico condicionado ao estado, na MESMA instrucao SQL -
-    // mesma logica e mesmo motivo de addServiceToOrderWithClient (fecha o
-    // achado de item incluido fora do estado permitido e a corrida no
-    // calculo do agregado). Feito ANTES do decremento de estoque: se a OS
-    // nao aceitar mais itens, nem chega a tocar no estoque.
     const orderUpdated = await tx.serviceOrder.updateMany({
       where: {
         id: serviceOrderId,
@@ -444,13 +404,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       );
     }
 
-    // Decremento condicional atomico: a checagem de quantidade e a
-    // escrita acontecem na MESMA instrucao SQL (UPDATE ... WHERE
-    // quantity >= X), com lock de linha do Postgres. O findUnique
-    // acima e so pra dar um erro 404 cedo com uma mensagem melhor -
-    // ele NAO e a fonte de verdade da checagem de disponibilidade
-    // (duas transacoes concorrentes podiam ler o mesmo valor antes
-    // de qualquer uma escrever, permitindo overselling).
     const decremented = await tx.stockItem.updateMany({
       where: { id: stockItemId, quantity: { gte: quantity } },
       data: { quantity: { decrement: quantity }, updatedAt: new Date() },
@@ -460,10 +413,6 @@ export class PrismaServiceOrderRepository implements ServiceOrderRepository {
       throw new ConflictException('Insufficient stock quantity.');
     }
 
-    // upsert (nao findFirst + create/update) porque a constraint
-    // unique(serviceOrderId, stockItemId) faz o Postgres resolver a
-    // corrida via ON CONFLICT - duas requisicoes concorrentes
-    // adicionando o mesmo item nao criam mais duas linhas.
     await tx.serviceOrderStockItem.upsert({
       where: {
         serviceOrderId_stockItemId: { serviceOrderId, stockItemId },

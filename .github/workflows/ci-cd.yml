@@ -12,14 +12,6 @@ on:
 permissions:
   contents: read
 
-# Sem isso, um push em main (deploy automatico) e um workflow_dispatch manual
-# quase simultaneos rodam o job de deploy em paralelo contra o MESMO
-# cluster/release do Helm - reproduzido na pratica: dois "helm upgrade
-# --install datadog-agent" concorrentes, um deles falhando com "UPGRADE
-# FAILED: release: already exists". cancel-in-progress=false enfileira em
-# vez de cancelar um deploy ja em andamento (cancelar no meio podia deixar o
-# cluster num estado pior do que a corrida original). O group inclui
-# github.ref para nao serializar PRs de branches diferentes entre si.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: false
@@ -199,7 +191,6 @@ jobs:
               Write-Host "KUBE_CONFIG não informado; usando o contexto Kubernetes do runner."
           }
 
-          # Check if kubectl cluster-info runs successfully
           kubectl cluster-info
           if ($LASTEXITCODE -ne 0) {
               Write-Error "Nenhum cluster Kubernetes acessível. Configure KUBE_CONFIG para um cluster remoto ou DEPLOY_RUNNER=self-hosted para usar o cluster local do runner."
@@ -230,10 +221,6 @@ jobs:
               exit $LASTEXITCODE
           }
 
-          # kubectl set image so reinicia os pods se a imagem mudar. Como o
-          # secret oficina-secrets pode ter sido rotacionado sem mudanca de
-          # imagem (ex: rerun de workflow, rotacao manual de senha), forcamos
-          # sempre um rollout restart para os pods relerem o secret atual.
           Write-Host "Forcando rollout restart para os pods relerem o secret atual..."
           kubectl rollout restart deployment/oficina-api -n oficina
           if ($LASTEXITCODE -ne 0) {
@@ -287,10 +274,6 @@ jobs:
           echo "Atualizando imagem do Deployment para ${image}..."
           kubectl set image deployment/oficina-api "oficina-api=${image}" "prisma-migrate=${image}" -n oficina
 
-          # kubectl set image so reinicia os pods se a imagem mudar. Como o
-          # secret oficina-secrets pode ter sido rotacionado sem mudanca de
-          # imagem (ex: rerun de workflow, rotacao manual de senha), forcamos
-          # sempre um rollout restart para os pods relerem o secret atual.
           echo "Forcando rollout restart para os pods relerem o secret atual..."
           kubectl rollout restart deployment/oficina-api -n oficina
 
@@ -311,12 +294,6 @@ jobs:
           set -euo pipefail
 
           if [ -z "${DATADOG_API_KEY:-}" ]; then
-              # ::warning:: em vez de so um echo - fica visivel no resumo do
-              # run no GitHub Actions, nao so escondido no log do step. Ja
-              # aconteceu do secret existir mas com valor vazio (paste
-              # interativo do gh secret set falhando silenciosamente) e o
-              # deploy "passar" sem ninguem notar que a observabilidade
-              # ficou fora do ar.
               echo "::warning::DATADOG_API_KEY nao configurado (ou vazio) - pulando deploy do Datadog Agent. A aplicacao vai subir sem APM/logs/metricas no Datadog."
               exit 0
           fi
@@ -325,12 +302,6 @@ jobs:
           helm repo add datadog https://helm.datadoghq.com
           helm repo update
 
-          # clusterAgent desabilitado: cluster single-node pequeno (t3.small,
-          # Free Tier) nao precisa de agregacao cluster-wide (kube-state-
-          # metrics etc) so pra este projeto academico - metricas de
-          # host/pod (kubelet) e os logs/traces do proprio Agent ja cobrem
-          # o que o desafio pede. kubelet.tlsVerify=false pelo mesmo motivo
-          # do metrics-server: certificado self-signed do Kind.
           helm upgrade --install datadog-agent datadog/datadog \
             --namespace datadog --create-namespace \
             --set datadog.apiKey="${DATADOG_API_KEY}" \

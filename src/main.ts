@@ -1,7 +1,3 @@
-// dd-trace precisa ser inicializado antes de qualquer outro import para
-// conseguir instrumentar automaticamente (auto-patch) os modulos carregados
-// depois dele (express, pg, etc). So ativa quando DD_AGENT_HOST esta
-// definido, para nao tentar conectar num agent inexistente em dev/testes.
 if (process.env.DD_AGENT_HOST) {
   // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   require('dd-trace').init({

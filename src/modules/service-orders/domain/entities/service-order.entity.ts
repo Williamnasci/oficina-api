@@ -18,13 +18,6 @@ export type ServiceOrderProps = {
 };
 
 export class ServiceOrder {
-  // Servicos e pecas compoem o orcamento - uma vez que a OS sai de
-  // RECEIVED/IN_DIAGNOSIS (orcamento enviado, aprovado, em execucao,
-  // finalizado ou entregue), os itens deixam de ser uma lista aberta.
-  // Alterar depois disso mudaria silenciosamente um valor que o cliente
-  // ja avaliou/aprovou, ou baixaria estoque contra uma OS ja concluida.
-  // Definido aqui (dominio) e referenciado pela infraestrutura, para a
-  // regra de negocio nao ficar duplicada/podendo divergir entre camadas.
   public static readonly ITEM_MODIFIABLE_STATUSES: ServiceOrderStatus[] = [
     ServiceOrderStatus.RECEIVED,
     ServiceOrderStatus.IN_DIAGNOSIS,
@@ -65,9 +58,6 @@ export class ServiceOrder {
       throw new DomainException('Diagnosis is required.');
     }
 
-    // Sem essa checagem, uma OS ja FINISHED/DELIVERED podia voltar para
-    // IN_DIAGNOSIS a qualquer momento - este metodo nao validava o
-    // estado atual, so o conteudo do diagnostico.
     if (
       this.status !== ServiceOrderStatus.RECEIVED &&
       this.status !== ServiceOrderStatus.IN_DIAGNOSIS
@@ -89,10 +79,6 @@ export class ServiceOrder {
       );
     }
 
-    // `diagnosis` permanece preenchido para sempre depois do primeiro
-    // registro - checar so isso permitia reenviar orcamento (voltando
-    // para WAITING_APPROVAL) de qualquer estado posterior, inclusive
-    // FINISHED/DELIVERED.
     if (this.status !== ServiceOrderStatus.IN_DIAGNOSIS) {
       throw new DomainException(
         'Only service orders in diagnosis can have a budget sent for approval.',

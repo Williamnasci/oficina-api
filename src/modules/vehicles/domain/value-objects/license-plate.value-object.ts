@@ -1,10 +1,5 @@
 import { DomainException } from '../../../../shared/domain/errors/domain.exception';
 
-/**
- * Brazil license plate formats:
- * Old format: ABC1234
- * Mercosul format: ABC1D23
- */
 export class LicensePlate {
   private readonly _value: string;
 

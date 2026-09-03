@@ -16,9 +16,6 @@ import { AppService } from './app.service';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    // Logs JSON estruturados com correlation ID por requisicao (req.id) e,
-    // quando dd-trace esta ativo (ver main.ts), com dd.trace_id/dd.span_id
-    // injetados automaticamente - correlaciona log <-> trace no Datadog.
     LoggerModule.forRoot({
       pinoHttp: {
         genReqId: (req) => req.headers['x-request-id'] ?? randomUUID(),

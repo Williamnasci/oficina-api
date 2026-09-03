@@ -31,13 +31,6 @@ export class OpenServiceOrderUseCase {
   ) {}
 
   async execute(input: OpenServiceOrderDto): Promise<{ id: string }> {
-    // Cliente, veiculo, OS e cada servico/item de estoque sao escritos em
-    // repositorios diferentes (modulos diferentes); sem envolver tudo
-    // numa unica transacao, uma falha no meio (ex.: estoque insuficiente
-    // no ultimo item) deixava cliente/veiculo/OS parcialmente
-    // persistidos, sem rollback. runInTransaction abre uma unica
-    // transacao Prisma e repassa o client (tx) para cada repositorio -
-    // qualquer excecao no bloco desfaz tudo.
     const serviceOrder = await this.unitOfWork.runInTransaction(async (tx) => {
       const customer = await this.findOrCreateCustomer(input, tx);
       const vehicle = await this.findOrCreateVehicle(input, customer.id, tx);
@@ -77,9 +70,6 @@ export class OpenServiceOrderUseCase {
       return order;
     });
 
-    // Fora da transacao, de proposito: so registra a metrica depois do
-    // commit - se o bloco acima tivesse sido revertido (rollback), a OS
-    // nao existe de verdade e a metrica nao deveria contar como criada.
     this.metricsService.recordServiceOrderCreated();
 
     return { id: serviceOrder.id };

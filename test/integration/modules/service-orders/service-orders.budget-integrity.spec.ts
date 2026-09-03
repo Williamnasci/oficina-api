@@ -6,11 +6,6 @@ import { PrismaService } from '../../../../src/shared/infrastructure/prisma/pris
 import { DomainExceptionFilter } from '../../../../src/shared/infrastructure/filters/domain-exception.filter';
 import { PrismaExceptionFilter } from '../../../../src/shared/infrastructure/filters/prisma-exception.filter';
 
-// Regressao dos achados ALT-01/ALT-02/MED-02 da revisao externa: itens
-// adicionados fora do estado permitido, corrida no calculo dos agregados
-// financeiros, e transicoes concorrentes com last-write-wins. Testes contra
-// o banco real (nao mocks) - a corrida so se manifesta com Postgres de
-// verdade.
 describe('ServiceOrders budget integrity under concurrency (real integration)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -43,13 +38,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
         transform: true,
       }),
     );
-    // Testes de integracao criam a app via createNestApplication(), que
-    // NAO passa por main.ts/bootstrap() - sem isso, DomainException (ex.:
-    // ALT-01) responde 500 generico em vez de 422, porque nenhum filtro
-    // global esta registrado. Gap pre-existente em toda a suite de
-    // integracao (nenhum outro arquivo registra isso), so nunca
-    // apareceu porque nenhum teste anterior exercitava esse caminho via
-    // HTTP de verdade.
     app.useGlobalFilters(
       new DomainExceptionFilter(),
       new PrismaExceptionFilter(),
@@ -149,9 +137,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       .send({ stockItemId: ids.stockItemA, quantity: 1 })
       .expect(422);
 
-    // Prova que o estoque NAO foi baixado - antes da correcao, o
-    // endpoint aceitava a inclusao e decrementava o estoque mesmo com
-    // a OS ja entregue.
     const stockAfter = await prisma.stockItem.findUniqueOrThrow({
       where: { id: ids.stockItemA },
     });
@@ -180,11 +165,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       include: { services: true },
     });
 
-    // serviceA = 150, serviceB = 90 (ver seedBaseData) - antes da
-    // correcao, o padrao "ler todos os itens, somar em memoria,
-    // escrever valor absoluto" deixava servicesAmount refletir so uma
-    // das duas inclusoes concorrentes (lost update), mesmo com as
-    // duas linhas de item persistidas corretamente.
     expect(order.services).toHaveLength(2);
     expect(Number(order.servicesAmount)).toBe(240);
     expect(Number(order.totalAmount)).toBe(240);
@@ -212,7 +192,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       include: { stockItems: true },
     });
 
-    // stockItemA = 50, stockItemB = 30 (ver seedBaseData)
     expect(order.stockItems).toHaveLength(2);
     expect(Number(order.stockItemsAmount)).toBe(80);
     expect(Number(order.totalAmount)).toBe(80);
@@ -243,10 +222,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
 
     const statuses = [approveResult.status, rejectResult.status].sort();
 
-    // Uma das duas decisoes deve ter sido aplicada com sucesso (204) e
-    // a outra rejeitada por conflito (409) - antes da correcao, as
-    // duas podiam suceder (204/204), com a ultima escrita
-    // sobrescrevendo silenciosamente a decisao da primeira.
     expect(statuses).toEqual([204, 409]);
 
     const order = await prisma.serviceOrder.findUniqueOrThrow({
@@ -264,13 +239,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       .send({ diagnosis: 'Regression test diagnosis.' })
       .expect(204);
 
-    // send-budget e a inclusao de servico sao ambos validos a partir de
-    // IN_DIAGNOSIS. Antes da correcao, update(order, expectedStatus)
-    // reescrevia servicesAmount/totalAmount usando o snapshot em
-    // memoria carregado no INICIO do caso de uso de transicao - se a
-    // inclusao do servico commitasse entre essa leitura e essa escrita,
-    // o incremento atomico era apagado silenciosamente, mesmo com a
-    // transicao de status em si tendo sucesso.
     const [addServiceResult, sendBudgetResult] = await Promise.all([
       request(app.getHttpServer())
         .post(`/service-orders/${orderId}/services`)
@@ -281,15 +249,8 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
         .set('Authorization', `Bearer ${accessToken}`),
     ]);
 
-    // send-budget so pode falhar (422) se a OS ja tiver saido de
-    // IN_DIAGNOSIS por outro motivo - nao deveria acontecer aqui.
     expect(sendBudgetResult.status).toBe(204);
 
-    // addService so tem dois desfechos legitimos nesta corrida: 204 (venceu
-    // antes do send-budget mudar o status) ou 422 (send-budget mudou o
-    // status primeiro, DomainException do ALT-01). Qualquer outro codigo
-    // (ex.: 500) e um bug real e nao deve passar batido so porque o
-    // invariante de totais abaixo aceitaria zero itens de qualquer forma.
     expect([204, 422]).toContain(addServiceResult.status);
 
     const order = await prisma.serviceOrder.findUniqueOrThrow({
@@ -297,12 +258,6 @@ describe('ServiceOrders budget integrity under concurrency (real integration)', 
       include: { services: true },
     });
 
-    // Invariante que deve valer independente de quem "ganhou" a
-    // corrida: o total persistido no pai bate com a soma real dos
-    // itens persistidos no filho. Isso e verdade tanto se
-    // addServiceToOrder venceu antes do send-budget quanto o
-    // contrario - o que nao pode acontecer e o item existir na tabela
-    // filha com o total do pai != soma dos itens.
     const expectedServicesAmount = order.services.reduce(
       (sum, item) => sum + Number(item.totalPrice),
       0,
