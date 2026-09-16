@@ -1,7 +1,5 @@
 # oficina-api
 
-> Repositório renomeado na Fase 3 (era `oficina-tech-challenge`) para refletir seu papel dentro do split de 4 repositórios exigido pelo desafio — ver [ADR-0005](docs/adr/0005-split-de-repositorios.md).
-
 ## Repositórios do Tech Challenge Fase 3
 
 Este é o repositório da **aplicação principal**. Os demais componentes da Fase 3 vivem em repositórios separados, cada um com seu próprio CI/CD e branch `main` protegida:
@@ -267,12 +265,6 @@ Os demais endpoints (`GET`, `PATCH` de atualização e `DELETE` de cada recurso,
 A especificação OpenAPI / Swagger pode ser acessada localmente após iniciar a aplicação:
 - **Swagger URL**: `http://localhost:3000/docs`
 
-> [!NOTE]
-> Para testar os endpoints protegidos por autenticação no Swagger, acesse a rota `POST /auth/login` com o usuário de demonstração acadêmica (`admin` / `admin`), copie o token JWT gerado e insira-o clicando no botão **Authorize** (formato: `Bearer <token>`).
-
-> [!IMPORTANT]
-> **O Swagger não é acessível pela URL pública do API Gateway.** Pelo roteamento híbrido decidido no [ADR-0004](docs/adr/0004-api-gateway-roteamento.md), só `POST /auth/login` e `GET /health` são rotas públicas — `GET /docs` cai em `ANY /{proxy+}`, protegida pelo Lambda Authorizer, então um `GET` direto do navegador (sem `Authorization: Bearer`) recebe `401`. Isso é intencional: o Gateway mantém a superfície pública mínima por desenho, o mesmo motivo pelo qual [o painel de demonstração](public/index.html) também não é servido pela URL pública. Para acessar o Swagger contra o ambiente real (não local), use `kubectl port-forward svc/oficina-api <porta>:80 -n oficina` e abra `http://localhost:<porta>/docs` — mesma técnica usada para o painel.
-
 ---
 
 ## Vídeo de Demonstração
@@ -404,8 +396,6 @@ Os manifests ficam em `k8s/` (validados via `kubectl kustomize k8s` no CI/CD e a
 - Liveness probe em `/health`.
 - HPA por CPU e memória.
 
-> **Não há mais Service/StatefulSet de PostgreSQL nesta pasta.** Na Fase 2, o banco rodava dentro do cluster (StatefulSet + PVC); na Fase 3, o banco é o RDS gerenciado (`oficina-infra-database`), fora do cluster — por isso esses manifests foram removidos, não é uma omissão.
-
 Validação dos manifests:
 
 ```bash
@@ -413,8 +403,6 @@ kubectl kustomize k8s
 ```
 
 ### Terraform
-
-> **Este `infra/terraform/` é o Terraform original da Fase 2** — cria um cluster Kind **local** e os workloads dentro dele (incluindo um StatefulSet de PostgreSQL em cluster). Ele continua no repositório e funcional para desenvolvimento/demonstração local, mas **não é o que provisiona o ambiente publicado da Fase 3**. A infraestrutura real (EC2 + Kind na AWS, API Gateway) é provisionada por Terraform no repositório [`oficina-infra-k8s`](https://github.com/Williamnasci/oficina-infra-k8s); o RDS PostgreSQL gerenciado é provisionado por Terraform no repositório [`oficina-infra-database`](https://github.com/Williamnasci/oficina-infra-database). Ver `infra/terraform/README.md` para o detalhamento completo deste Terraform local.
 
 A implementação Terraform local fica em `infra/terraform/` e está dividida em duas etapas:
 
@@ -497,8 +485,6 @@ Resultado real, obtido nesta verificação (2026-08-20T04:30:29Z):
 {"status":"ok","app":"ok","database":"ok","timestamp":"2026-08-20T04:30:29.248Z"}
 ```
 
-> **Nota sobre disponibilidade:** durante esta mesma verificação, o endpoint público chegou a responder `503` mais cedo, porque a EC2 do cluster tinha trocado de IP público (stop/start do AWS Academy Learner Lab, sem Elastic IP — ver [ADR-0007](docs/adr/0007-migracao-aws-academy.md)) e o `integration_uri` do API Gateway (`oficina-infra-k8s`) ainda apontava para o IP anterior. Diagnosticado ao vivo (aplicação e RDS saudáveis via SSM Session Manager direto na EC2, `503` só no Gateway) e corrigido rodando `terraform apply` em `oficina-infra-k8s` — que já resolve isso sozinho, porque o `integration_uri` referencia o atributo `public_ip` do estado do Terraform, atualizado no refresh de qualquer `apply`, não só numa recriação da instância (`-replace`). Não é preciso destruir/recriar a EC2 para corrigir um IP desatualizado — só rodar `apply` de novo.
-
 ## HPA e Metrics Server
 
 O `metrics-server` é instalado automaticamente no bootstrap do cluster (`user_data.sh.tpl` em `oficina-infra-k8s`, com `--kubelet-insecure-tls` — Kind usa certificado de kubelet self-signed que o metrics-server não valida por padrão), não precisa de passo manual.
@@ -570,8 +556,6 @@ DATADOG_API_KEY                   (se ausente/vazio, o deploy segue sem instalar
 - `DOCKERHUB_USERNAME` e `DOCKERHUB_TOKEN` são usados para publicar imagem no Docker Hub;
 - `KUBE_CONFIG` hoje aponta para o cluster real na AWS (EC2 + Kind, `oficina-infra-k8s`) — o job `deploy` roda num runner hospedado pelo GitHub (`ubuntu-latest`), não um runner self-hosted; a variável `DEPLOY_RUNNER` continua suportada como *fallback* (`runs-on: ${{ vars.DEPLOY_RUNNER || 'ubuntu-latest' }}`) para quem quiser rodar contra um cluster Kind local com um runner self-hosted, mas não é o modo usado no ambiente publicado da Fase 3;
 - o deploy falha quando nenhum cluster acessível está configurado, evitando um falso sucesso da entrega contínua.
-
-> **Sobre branch protection:** a `main` é protegida (sem commit direto, PR obrigatório, sem force-push/delete) e `enforce_admins` está ativo. Não há `required_status_checks` configurado — o merge não é bloqueado automaticamente se o CI estiver falhando. Risco aceito conscientemente para um projeto de mantenedor único (mesmo padrão de outros riscos documentados neste projeto), não uma omissão.
 
 
 ## SonarQube
@@ -678,8 +662,6 @@ Payload de demonstração:
 ```
 
 Use o token retornado como Bearer Token no Swagger.
-
-> **Nota (Fase 3):** essa é a rota de login local/demo (`admin`/`admin`, útil pra testar direto no Swagger). No ambiente publicado via API Gateway, a autenticação real é por CPF, emitida pela função Lambda `oficina-auth-login` (ver `oficina-lambda-auth`) — o guard deste serviço (`jwt.strategy.ts`) valida os dois tipos de token, porque o `JWT_SECRET` é compartilhado com a Lambda (mesmo segredo no Secrets Manager).
 
 ## Testes
 
