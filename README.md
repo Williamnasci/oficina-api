@@ -277,7 +277,7 @@ A especificação OpenAPI / Swagger pode ser acessada localmente após iniciar a
 
 ## Vídeo de Demonstração
 
-
+- **YouTube (não listado):** [Tech Challenge - Fase 3 - Oficina](https://www.youtube.com/watch?v=FCMG0txZ1AI)
 
 ---
 
